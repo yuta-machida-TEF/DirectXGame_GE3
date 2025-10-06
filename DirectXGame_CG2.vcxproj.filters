@@ -53,12 +53,12 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="Object3d.VS.hlsl" />
-    <FxCompile Include="Object3d.PS.hlsl" />
+    <FxCompile Include="Resources\shader\Object3d.VS.hlsl" />
+    <FxCompile Include="Resources\shader\Object3d.PS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="HTMLPage2.html" />
-    <None Include="Object3d.hlsli" />
+    <None Include="Resources\shader\Object3d.hlsli" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="externals\imgui\imconfig.h">

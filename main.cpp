@@ -443,7 +443,7 @@ IDxcBlob* CompileShader(
 	IDxcIncludeHandler* includeHandler)
 {
 	//1,hlslファイルを読む
-	Log(ConverString(std::format(L"Begin CompileShader,path:{},profile:{}\n", filePath, profile)));
+	Log(ConverString(std::format(L"Resources/shader/Begin CompileShader,path:{},profile:{}\n", filePath, profile)));
 	//hlslファイルを読む
 	IDxcBlobEncoding* shaderSource = nullptr;
 	HRESULT hr = dxcUtils->LoadFile(filePath.c_str(), nullptr, &shaderSource);
@@ -491,7 +491,7 @@ IDxcBlob* CompileShader(
 	hr = shaderResult->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(&shaderBlob), nullptr);
 	assert(SUCCEEDED(hr));
 	//成功したログを出す
-	Log(ConverString(std::format(L"Compile Succeeded,path:{},profile:{}\n", filePath, profile)));
+	Log(ConverString(std::format(L"Resources/shader/Compile Succeeded,path:{},profile:{}\n", filePath, profile)));
 	//もう使わないリソースを解放
 	shaderSource->Release();
 	shaderResult->Release();
@@ -1017,12 +1017,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//三角形の中を塗りつぶす
 	rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
 	//Shaderをコンパイルする
-	IDxcBlob* vertexShaderBlob = CompileShader(L"Object3D.VS.hlsl",
+	IDxcBlob* vertexShaderBlob = CompileShader(L"Resources/shader/Object3D.VS.hlsl",
 		L"vs_6_0", dxcUtlis, dxcCompiler, includeHandler);
 	assert(vertexShaderBlob != nullptr);
 
 
-	IDxcBlob* pixelShaderBlob = CompileShader(L"Object3D.PS.hlsl",
+	IDxcBlob* pixelShaderBlob = CompileShader(L"Resources/shader/Object3D.PS.hlsl",
 		L"ps_6_0", dxcUtlis, dxcCompiler, includeHandler);
 	assert(pixelShaderBlob != nullptr);
 
