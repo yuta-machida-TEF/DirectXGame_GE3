@@ -6,22 +6,25 @@
 #include<cassert>
 #include<dxgidebug.h>
 #include "externals/DirectXTex/DirectXTex.h"
+#include "Input.h"
 
+//DirectInputインクルード
+#define DIRECTINPUT_VERSION 0x0800
+#include <dinput.h>
+
+#pragma comment(lib,"dinput8.lib")
 #pragma comment(lib,"d3d12.lib")
 #pragma comment(lib,"dxgi.lib")
 #pragma comment(lib,"dxguid.lib")
 #include <dxcapi.h>
 #pragma comment(lib, "dxcompiler.lib")
 
-#include "externals/imgui/imgui.h"
 #include "externals/imgui/imgui_impl_dx12.h"
 #include "externals/imgui/imgui_impl_win32.h"
 #include<fstream>
 #include<sstream>
+
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
-
-
-
 
 struct Vector4
 {
@@ -686,6 +689,18 @@ ModelData LoadObjFile(const std::string& directoryPath, const std::string& filen
 
 //WIndowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
+	
+	//ポインタ
+	Input* input = nullptr;
+
+	//入力の初期化
+	input = new Input();
+	input->Initialize();
+
+	//入力解放
+	delete input;
+
+	//assert(false && "assertのテストだよ");
 
 	//CoInitializeEx(0, COINIT_MULTITHREADED);
 	WNDCLASS wc{};
@@ -728,6 +743,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	//ウィンドウを表示する
 	ShowWindow(hwnd, SW_SHOW);
+
+ 
+
 
 #ifdef _DEBUG//DEBUGはCreateWindowの直後
 
@@ -970,9 +988,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//単位行列を書き込んでおく
 	*wvpData = MakeIdentity4x4();
 
-	//モデル読み込み
-	ModelData modelData = LoadObjFile("resources", "plane.obj");
-
 	//シリアライズしてバイナリする
 	ID3D10Blob* signatureBlob = nullptr;
 	ID3D10Blob* errorBlob = nullptr;
@@ -1065,6 +1080,33 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		IID_PPV_ARGS(&graphicsPipelineState));
 	assert(SUCCEEDED(hr));
 
+	
+
+
+	//Direct Input　初期化
+	IDirectInput8* directInput = nullptr;
+	hr = DirectInput8Create(
+		wc.hInstance, DIRECTINPUT_VERSION, IID_IDirectInput8,
+		(void**)&directInput, nullptr);
+	assert(SUCCEEDED(hr));
+
+	//キーボードデバイスの生成
+	IDirectInputDevice8* keyboard = nullptr;
+	hr = directInput->CreateDevice(GUID_SysKeyboard, &keyboard, NULL);
+	assert(SUCCEEDED(hr));
+
+	//入力データ形式のセット
+	hr = keyboard->SetDataFormat(&c_dfDIKeyboard);//標準形式
+	assert(SUCCEEDED(hr));
+
+	//排他制御レベルのセット
+	hr = keyboard->SetCooperativeLevel(
+		hwnd, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE | DISCL_NOWINKEY);
+	assert(SUCCEEDED(hr));
+
+	//モデル読み込み
+	ModelData modelData = LoadObjFile("resources", "plane.obj");
+
 	//ID3D12Resource* vertexResource = CreateBufferResource(device, sizeof(VertexData) * 6);
 
 	//マテリアル用のリソースを作る。今回はcolor1つ分のサイズを用意する
@@ -1109,6 +1151,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	////右下2
 	//vertexData[5].position = { 0.5f,-0.5f ,-0.5f ,1.0f };
 	//vertexData[5].texcoord = { 1.0f,1.0f };
+
+
 
 	//ビューボート
 	D3D12_VIEWPORT viewport{};
@@ -1249,7 +1293,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	vertexResource->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));//書き込むためのアドレスを取得
 	std::memcpy(vertexData, modelData.vertices.data(), sizeof(VertexData)* modelData.vertices.size());//頂点データをリソースにコピー
 
-
+	BYTE key[256]{};
+	BYTE preKey[256]{};
 
 	//ウィンドウのxボタンが押されるまでループ
 
@@ -1263,15 +1308,30 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			DispatchMessage(&msg);
 		} else
 		{
+			//キーボード
+			keyboard->Acquire();
+			//前frameの入力を保存
+			memcpy(preKey, key, 256);
 
+			//最新の入力を保存
+			keyboard->GetDeviceState(sizeof(key), key);
+			
 			/*ゲーム処理.
 			Log(std::format("enemyHP:{},textruePath:{}\n", enemyHp, text))*/
+
+			//数字のキーが押されていたら
+			if (key[DIK_SPACE]&& !preKey[DIK_SPACE])
+			{
+   				OutputDebugStringA("Hit SPACE\n");
+			}
+
 		}
 		
 
 		ImGui_ImplDX12_NewFrame();
 		ImGui_ImplWin32_NewFrame();
 		ImGui::NewFrame();
+
 
 		ImGui::Begin("Sprite");
 		ImGui::ColorEdit4("material", &materialData->x, ImGuiColorEditFlags_AlphaPreview);
@@ -1414,6 +1474,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		assert(SUCCEEDED(hr));
 		hr = commandList->Reset(commandAllocator, nullptr);
 		assert(SUCCEEDED(hr));
+
+		
 
 	}
 
