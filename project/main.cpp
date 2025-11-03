@@ -12,10 +12,10 @@
 #define DIRECTINPUT_VERSION 0x0800
 #include <dinput.h>
 
-#pragma comment(lib,"dinput8.lib")
+//#pragma comment(lib,"dinput8.lib")
 #pragma comment(lib,"d3d12.lib")
 #pragma comment(lib,"dxgi.lib")
-#pragma comment(lib,"dxguid.lib")
+//#pragma comment(lib,"dxguid.lib")
 #include <dxcapi.h>
 #pragma comment(lib, "dxcompiler.lib")
 
@@ -690,16 +690,6 @@ ModelData LoadObjFile(const std::string& directoryPath, const std::string& filen
 //WIndowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	
-	//ポインタ
-	Input* input = nullptr;
-
-	//入力の初期化
-	input = new Input();
-	input->Initialize();
-
-	//入力解放
-	delete input;
-
 	//assert(false && "assertのテストだよ");
 
 	//CoInitializeEx(0, COINIT_MULTITHREADED);
@@ -744,7 +734,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//ウィンドウを表示する
 	ShowWindow(hwnd, SW_SHOW);
 
- 
+	//ポインタ
+	Input* input = nullptr;
+
+	//入力の初期化
+	input = new Input();
+	input->Initialize(wc.hInstance,hwnd);
+
+	//入力解放
+	delete input;
 
 
 #ifdef _DEBUG//DEBUGはCreateWindowの直後

@@ -1,5 +1,6 @@
 //DirectInputインクルード
 #pragma once
+#include <windows.h>
 
 #pragma once
 class Input
@@ -7,7 +8,7 @@ class Input
 public:
 
 	//初期化
-	void Initialize();
+	void Initialize(HINSTANCE hInstance,HWND hwnd);
 	void Update();
 
 
