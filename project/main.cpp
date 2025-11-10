@@ -11,11 +11,8 @@
 //DirectInputインクルード
 #define DIRECTINPUT_VERSION 0x0800
 #include <dinput.h>
-
-//#pragma comment(lib,"dinput8.lib")
 #pragma comment(lib,"d3d12.lib")
 #pragma comment(lib,"dxgi.lib")
-//#pragma comment(lib,"dxguid.lib")
 #include <dxcapi.h>
 #pragma comment(lib, "dxcompiler.lib")
 
@@ -740,6 +737,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//入力の初期化
 	input = new Input();
 	input->Initialize(wc.hInstance,hwnd);
+	input->Update();
 
 	//入力解放
 	delete input;
