@@ -20,6 +20,7 @@
 #include "externals/imgui/imgui_impl_win32.h"
 #include<fstream>
 #include<sstream>
+#include"WinApp.h"
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -690,6 +691,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//assert(false && "assertのテストだよ");
 
 	//CoInitializeEx(0, COINIT_MULTITHREADED);
+
+	//ポインタ
+	WinApp* winApp = nullptr;
+
+	//WindowsAPIの初期化
+	winApp = new WinApp();
+	winApp->Initialize();
+
+	delete winApp;
+
 	WNDCLASS wc{};
 	//ウィンドウブロシージャ
 	wc.lpfnWndProc = WindowProc;
