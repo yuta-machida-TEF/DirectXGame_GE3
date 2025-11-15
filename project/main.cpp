@@ -699,8 +699,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	winApp = new WinApp();
 	winApp->Initialize();
 
-	delete winApp;
-
 	WNDCLASS wc{};
 	//ウィンドウブロシージャ
 	wc.lpfnWndProc = WindowProc;
@@ -747,7 +745,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	//入力の初期化
 	input = new Input();
-	input->Initialize(wc.hInstance,hwnd);
+	input->Initialize(winApp->GetHInstance(),winApp->GetHwnd());
 	input->Update();
 
 	//入力解放
@@ -878,7 +876,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	swapChainDesc.BufferCount = 2;
 	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 	//コマンドキュー、ウィンドウハンドル、設定を渡して生成する
-	hr = dxgiFactory->CreateSwapChainForHwnd(commandQueue, hwnd, &swapChainDesc, nullptr, nullptr, reinterpret_cast<IDXGISwapChain1**>(&swapChain));
+	hr = dxgiFactory->CreateSwapChainForHwnd(commandQueue, 
+		                                     winApp->GetHwnd(),
+		                                     &swapChainDesc, 
+		                                     nullptr, 
+		                                     nullptr, 
+		                                     reinterpret_cast<IDXGISwapChain1**>(&swapChain));
 
 	//SwapChainからResourceを引っ張ってくる
 	ID3D12Resource* swapChainResources[2] = { nullptr };
@@ -1302,6 +1305,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	BYTE key[256]{};
 	BYTE preKey[256]{};
+	delete winApp;
 
 	//ウィンドウのxボタンが押されるまでループ
 
