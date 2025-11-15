@@ -745,12 +745,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	//入力の初期化
 	input = new Input();
-	input->Initialize(winApp->GetHInstance(),winApp->GetHwnd());
+	input->Initialize(winApp);
 	input->Update();
 
 	//入力解放
 	delete input;
-
 
 #ifdef _DEBUG//DEBUGはCreateWindowの直後
 
@@ -1306,6 +1305,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	BYTE key[256]{};
 	BYTE preKey[256]{};
+
+	winApp = nullptr;
+
+	//WindowsAPIの終了処理
+	winApp->Finalize();
+
 	delete winApp;
 
 	//ウィンドウのxボタンが押されるまでループ
@@ -1456,7 +1461,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		//TransitionBarrierを振る
 		commandList->ResourceBarrier(1, &barrier);
 
-
+		
 
 		//コマンドリストの内容を確定させる。すべてのコマンドをつんでからCloseすること
 		hr = commandList->Close();

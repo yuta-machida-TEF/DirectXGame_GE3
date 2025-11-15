@@ -5,6 +5,8 @@
 #define DIRECTINPUT_VERSION 0x0800
 #include<dinput.h>
 bool TriggerKey(BYTE keyNumber);
+#include "WinApp.h"
+
 
 #pragma once
 class Input
@@ -15,7 +17,7 @@ public:
 	template<class T> using ComPtr = Microsoft::WRL::ComPtr<T>;
 
 	//初期化
-	void Initialize(HINSTANCE hInstance,HWND hwnd);
+	void Initialize(WinApp* winApp);
 	void Update();
 
 	//キーボードデバイスの生成
@@ -28,6 +30,9 @@ private:
 	ComPtr<IDirectInputDevice8> keyboard;
 
 	BYTE key[256] = {};
+
+	//WindowsAPI
+	WinApp* winApp_ = nullptr;
 
 	//directInput
 
