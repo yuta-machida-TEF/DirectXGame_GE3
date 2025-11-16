@@ -1310,40 +1310,22 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	//WindowsAPIの終了処理
 	winApp->Finalize();
-
 	delete winApp;
 
 	//ウィンドウのxボタンが押されるまでループ
 
 	MSG msg{};
 	//ウィンドウのxボタンが押されるまでループ
-	while (msg.message != WM_QUIT) {
-		//Windowにメッセージが来てたら最優先で処理させる
-		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+	while (true) 
+	{
+		//Windowsのメッセージ処理
+		if (winApp->ProcessMessage())
 		{
-			TranslateMessage(&msg);
-			DispatchMessage(&msg);
-		} else
-		{
-			//キーボード
-			keyboard->Acquire();
-			//前frameの入力を保存
-			memcpy(preKey, key, 256);
-
-			//最新の入力を保存
-			keyboard->GetDeviceState(sizeof(key), key);
-			
-			/*ゲーム処理.
-			Log(std::format("enemyHP:{},textruePath:{}\n", enemyHp, text))*/
-
-			//数字のキーが押されていたら
-			if (key[DIK_SPACE]&& !preKey[DIK_SPACE])
-			{
-   				OutputDebugStringA("Hit SPACE\n");
-			}
-
+			//ゲームループを抜ける
+			break;
 		}
-		
+	}
+	
 
 		ImGui_ImplDX12_NewFrame();
 		ImGui_ImplWin32_NewFrame();
@@ -1494,7 +1476,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		
 
-	}
+
 
 	Log(ConverString(std::format(L"WSTRING{}\n", L"abc")));
 
