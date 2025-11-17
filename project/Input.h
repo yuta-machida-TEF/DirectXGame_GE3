@@ -1,14 +1,13 @@
 //DirectInputインクルード
 #pragma once
 #include <windows.h>
+
 #include<wrl.h>
 #define DIRECTINPUT_VERSION 0x0800
 #include<dinput.h>
-bool TriggerKey(BYTE keyNumber);
-#include "WinApp.h"
 
+class WinApp;
 
-#pragma once
 class Input
 {
 public:
@@ -22,14 +21,16 @@ public:
 
 	//キーボードデバイスの生成
 	//前回の全てキーの状態
-	BYTE keyPre[256] = {};
-	ComPtr<IDirectInput8>directInput = nullptr;
+	bool TriggerKey(BYTE keyNumber);
 
 private:
+
 	//キーボードのデバイス
+	ComPtr<IDirectInput8>directInput;
 	ComPtr<IDirectInputDevice8> keyboard;
 
 	BYTE key[256] = {};
+	BYTE keyPre[256] = {};
 
 	//WindowsAPI
 	WinApp* winApp_ = nullptr;

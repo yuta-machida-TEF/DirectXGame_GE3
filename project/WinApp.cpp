@@ -1,14 +1,12 @@
-#include<Windows.h>
-#include<cstdint>
 #include "WinApp.h"
 #include "externals//imgui/imgui.h"
-extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam,LPARAM lParam);
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 bool WinApp::ProcessMessage()
 {
 	MSG msg{};
 
-	if (PeekMessage(&msg,nullptr,0,0,PM_REMOVE))
+	if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
 	{
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
@@ -27,6 +25,8 @@ void WinApp::Initialize()
 	HRESULT hr = CoInitializeEx(0, COINIT_MULTITHREADED);
 
 	//CoInitializeEx(0, COINIT_MULTITHREADED);
+
+	WNDCLASS wc{};
 	//ウィンドウブロシージャ
 	wc.lpfnWndProc = WindowProc;
 
@@ -46,6 +46,19 @@ void WinApp::Initialize()
 	//クライアント領域を元に実際のサイズにwrcを変更してもらう
 	AdjustWindowRect(&wrc, WS_OVERLAPPEDWINDOW, false);
 
+	//ウィンドウの生成
+	hwnd = CreateWindow(
+		wc.lpszClassName,        //利用するクラス名
+		L"CG2",                  //タイトルバーの文字(なんでも良い)
+		WS_OVERLAPPEDWINDOW,	 //よく見るウィンドウスタイル
+		CW_USEDEFAULT,			 //表示X座標(Windowsに任せる)
+		CW_USEDEFAULT,			 //表示Y座標(WindowsOSに任せる)
+		wrc.right - wrc.left,	 //ウィンドウ横幅
+		wrc.bottom - wrc.top,	 //ウィンドウ縦幅
+		nullptr,				 //親ウィンドウハンドル
+		nullptr,				 //メニューハンドル
+		wc.hInstance,			 //インスタンスハンドル
+		nullptr);				 //オプション
 
 	//ウィンドウを表示する
 	ShowWindow(hwnd, SW_SHOW);

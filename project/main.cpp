@@ -1,21 +1,17 @@
-#include<Windows.h>
 #include<string>
 #include<format>
 #include<d3d12.h>
 #include<dxgi1_6.h>
-#include<cassert>
 #include<dxgidebug.h>
 #include "externals/DirectXTex/DirectXTex.h"
 #include "Input.h"
 
-//DirectInputインクルード
-#define DIRECTINPUT_VERSION 0x0800
-#include <dinput.h>
 #pragma comment(lib,"d3d12.lib")
 #pragma comment(lib,"dxgi.lib")
-#include <dxcapi.h>
 #pragma comment(lib, "dxcompiler.lib")
 
+//DirectInputインクルード
+#include <dxcapi.h>
 #include "externals/imgui/imgui_impl_dx12.h"
 #include "externals/imgui/imgui_impl_win32.h"
 #include<fstream>
@@ -367,7 +363,7 @@ void Log(const std::string& message)
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg,
 	WPARAM wparam, LPARAM lparam) {
-
+	
 	/*ImGui::Begin("Settings");
 	ImGui::ColorEdit4("material", &materiaData->)*/
 	if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wparam, lparam))
@@ -689,9 +685,6 @@ ModelData LoadObjFile(const std::string& directoryPath, const std::string& filen
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	
 	//assert(false && "assertのテストだよ");
-
-	//CoInitializeEx(0, COINIT_MULTITHREADED);
-
 	//ポインタ
 	WinApp* winApp = nullptr;
 
@@ -765,8 +758,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	//DXGIファクトリーの生成
 	IDXGIFactory7* dxgiFactory = nullptr;
-	HRESULT hr = CreateDXGIFactory(IID_PPV_ARGS(&dxgiFactory));
+	//HRESULT hr = CreateDXGIFactory(IID_PPV_ARGS(&dxgiFactory));
+	HRESULT hr = CoInitializeEx(0, COINIT_MULTITHREADED);
 	assert(SUCCEEDED(hr));
+
+
 
 	//使用するアダブタ用の変数。最初にnullptrを入れておく
 	IDXGIAdapter4* useAdapter = nullptr;
@@ -867,20 +863,20 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//スワップチェーンを生成する
 	IDXGISwapChain4* swapChain = nullptr;
 	DXGI_SWAP_CHAIN_DESC1 swapChainDesc{};
-	swapChainDesc.Width = kClientWidth;
-	swapChainDesc.Height = kClientHeight;
+	swapChainDesc.Width = WinApp::kClientWidth;
+	swapChainDesc.Height = WinApp::kClientHeight;
 	swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 	swapChainDesc.SampleDesc.Count = 1;
 	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	swapChainDesc.BufferCount = 2;
 	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 	//コマンドキュー、ウィンドウハンドル、設定を渡して生成する
-	hr = dxgiFactory->CreateSwapChainForHwnd(commandQueue, 
-		                                     winApp->GetHwnd(),
-		                                     &swapChainDesc, 
-		                                     nullptr, 
-		                                     nullptr, 
-		                                     reinterpret_cast<IDXGISwapChain1**>(&swapChain));
+	dxgiFactory->CreateSwapChainForHwnd(commandQueue, 
+		                                 winApp->GetHwnd(),
+		                                 &swapChainDesc, 
+		                                 nullptr, 
+		                                 nullptr, 
+		                                 reinterpret_cast<IDXGISwapChain1**>(&swapChain));
 
 	//SwapChainからResourceを引っ張ってくる
 	ID3D12Resource* swapChainResources[2] = { nullptr };
@@ -1092,27 +1088,27 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	
 
 
-	//Direct Input　初期化
-	IDirectInput8* directInput = nullptr;
-	hr = DirectInput8Create(
-		wc.hInstance, DIRECTINPUT_VERSION, IID_IDirectInput8,
-		(void**)&directInput, nullptr);
-	assert(SUCCEEDED(hr));
+	////Direct Input　初期化
+	//IDirectInput8* directInput = nullptr;
+	//hr = DirectInput8Create(
+	//	wc.hInstance, DIRECTINPUT_VERSION, IID_IDirectInput8,
+	//	(void**)&directInput, nullptr);
+	//assert(SUCCEEDED(hr));
 
-	//キーボードデバイスの生成
-	IDirectInputDevice8* keyboard = nullptr;
-	hr = directInput->CreateDevice(GUID_SysKeyboard, &keyboard, NULL);
-	assert(SUCCEEDED(hr));
+	////キーボードデバイスの生成
+	//IDirectInputDevice8* keyboard = nullptr;
+	//hr = directInput->CreateDevice(GUID_SysKeyboard, &keyboard, NULL);
+	//assert(SUCCEEDED(hr));
 
-	//入力データ形式のセット
-	hr = keyboard->SetDataFormat(&c_dfDIKeyboard);//標準形式
-	assert(SUCCEEDED(hr));
+	////入力データ形式のセット
+	//hr = keyboard->SetDataFormat(&c_dfDIKeyboard);//標準形式
+	//assert(SUCCEEDED(hr));
 
 
-	//排他制御レベルのセット
-	hr = keyboard->SetCooperativeLevel(
-		hwnd, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE | DISCL_NOWINKEY);
-	assert(SUCCEEDED(hr));
+	////排他制御レベルのセット
+	//hr = keyboard->SetCooperativeLevel(
+	//	hwnd, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE | DISCL_NOWINKEY);
+	//assert(SUCCEEDED(hr));
 
 	//モデル読み込み
 	ModelData modelData = LoadObjFile("resources", "plane.obj");
@@ -1306,11 +1302,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	BYTE key[256]{};
 	BYTE preKey[256]{};
 
-	winApp = nullptr;
+	//winApp = nullptr;
 
-	//WindowsAPIの終了処理
-	winApp->Finalize();
-	delete winApp;
+
+
+
 
 	//ウィンドウのxボタンが押されるまでループ
 
@@ -1479,6 +1475,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 
 	Log(ConverString(std::format(L"WSTRING{}\n", L"abc")));
+
+	//WindowsAPIの終了処理
+	winApp->Finalize();
+
+	delete winApp;
 
 
 	CloseHandle(fenceEvent);
