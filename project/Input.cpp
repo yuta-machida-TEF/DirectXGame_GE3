@@ -1,23 +1,11 @@
-#include<Windows.h>
-#include <dxgi.h>
-#include <d3d11.h>
-#include <dxgi1_6.h> 
-#include <d3d12.h>
-#include<string>
-#include<format>
+#include "Input.h"
 #include<cassert>
-#include<dxgidebug.h>
-#include "externals/DirectXTex/DirectXTex.h"
-#include <dxcapi.h>
-#pragma comment(lib, "dxcompiler.lib")
+#include<wrl.h>
+using namespace Microsoft::WRL;
+#define DIRECTINPUT_VERSION 0x0800
+#include<dinput.h>
 #pragma comment(lib,"dinput8.lib")
 #pragma comment(lib,"dxguid.lib")
-#include "Input.h"
-
-
-
-
-
 
 void Input::Initialize(HINSTANCE hInstance, HWND hwnd)
 {
@@ -25,12 +13,12 @@ void Input::Initialize(HINSTANCE hInstance, HWND hwnd)
 
 	//CoInitializeEx(0, COINIT_MULTITHREADED);
 	//DirectInputのインスタンス生成
-	/*ComPtr<IDirectInput8>directInput = nullptr;*/
+	ComPtr<IDirectInput8>directInput = nullptr;
 	result = DirectInput8Create(hInstance, DIRECTINPUT_VERSION, IID_IDirectInput8, (void**)&directInput, nullptr);
 	assert(SUCCEEDED(result));
 
 	//キーボードデバイス生成
-	//ComPtr<IDirectInputDevice8>keyboard;
+	ComPtr<IDirectInputDevice8>keyboard;
 	result = directInput->CreateDevice(GUID_SysKeyboard, &keyboard, NULL);
 	assert(SUCCEEDED(result));
 
@@ -49,10 +37,10 @@ void Input::Update()
 	memcpy(keyPre, key, sizeof(key));
 
 	//キーボードの入力状態の更新
-	keyboard->Acquire();
+	//keyboard->Acquire();
 
 	//全キーの入力情報を取得する
-	keyboard->GetDeviceState(sizeof(key), key);
+	//keyboard->GetDeviceState(sizeof(key), key);
 
 }
 
