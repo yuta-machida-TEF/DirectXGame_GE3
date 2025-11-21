@@ -20,7 +20,6 @@
 #include "externals/imgui/imgui_impl_win32.h"
 #include<fstream>
 #include<sstream>
-#include"WinApp.h"
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -693,11 +692,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//CoInitializeEx(0, COINIT_MULTITHREADED);
 
 	//ポインタ
-	WinApp* winApp = nullptr;
-
-	//WindowsAPIの初期化
-	winApp = new WinApp();
-	winApp->Initialize();
 
 	WNDCLASS wc{};
 	//ウィンドウブロシージャ
@@ -745,7 +739,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	//入力の初期化
 	input = new Input();
-	input->Initialize(winApp->GetHInstance(),winApp->GetHwnd());
+	input->Initialize(wc.hInstance,hwnd);
 	input->Update();
 
 	//入力解放
@@ -877,7 +871,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 	//コマンドキュー、ウィンドウハンドル、設定を渡して生成する
 	hr = dxgiFactory->CreateSwapChainForHwnd(commandQueue, 
-		                                     winApp->GetHwnd(),
+		                                     hwnd,
 		                                     &swapChainDesc, 
 		                                     nullptr, 
 		                                     nullptr, 
@@ -1305,7 +1299,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	BYTE key[256]{};
 	BYTE preKey[256]{};
-	delete winApp;
 
 	//ウィンドウのxボタンが押されるまでループ
 
