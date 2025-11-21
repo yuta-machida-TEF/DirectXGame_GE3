@@ -77,4 +77,5 @@ LRESULT CALLBACK WinApp::WindowProc(HWND hwnd, UINT msg,
 	//標準のメッセージ処理を行う
 	return DefWindowProc(hwnd, msg, wparam, lparam);
 
+
 }
