@@ -15,11 +15,11 @@
 #pragma comment(lib,"dxgi.lib")
 #include <dxcapi.h>
 #pragma comment(lib, "dxcompiler.lib")
-
 #include "externals/imgui/imgui_impl_dx12.h"
 #include "externals/imgui/imgui_impl_win32.h"
 #include<fstream>
 #include<sstream>
+#include "WinApp.h"
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -745,7 +745,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//入力解放
 	delete input;
 
-
 #ifdef _DEBUG//DEBUGはCreateWindowの直後
 
 	ID3D12Debug1* debugController = nullptr;
@@ -1299,6 +1298,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	BYTE key[256]{};
 	BYTE preKey[256]{};
+
+	//ポインタ
+	WinApp* winApp = nullptr;
+
+	//WindowsAPIの初期化
+	winApp = new WinApp();
+	winApp->Initialize();
+	delete winApp;
 
 	//ウィンドウのxボタンが押されるまでループ
 
