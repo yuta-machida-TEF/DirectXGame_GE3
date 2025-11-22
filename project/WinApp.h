@@ -8,7 +8,22 @@ public:
 	//静的メンバ関数
 	static LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 
+	//クライアント領域のサイズ
+	static const int32_t kClientWidth = 1280;
+	static const int32_t kClientHeight = 720;
+
+	//getter
+	HWND GetHwnd() const { return hwnd; }
+
+	//getter
+	HINSTANCE GetHInstance() const { return wc.hInstance; }
+
 public: //メンバ関数
+
+	//ウィンドウハンドル
+	HWND hwnd = nullptr;
+
+	WNDCLASS wc{};
 	//初期化
 	void Initialize();
 	//更新

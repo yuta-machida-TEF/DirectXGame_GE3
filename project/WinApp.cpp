@@ -9,7 +9,6 @@ void WinApp::Initialize()
 {
 	HRESULT hr = CoInitializeEx(0, COINIT_MULTITHREADED);
 
-	WNDCLASS wc{};
 	//ウィンドウブロシージャ
 	wc.lpfnWndProc = WinApp::WindowProc;
 
@@ -23,9 +22,6 @@ void WinApp::Initialize()
 	//ウィンドウクラスを登録する
 	RegisterClass(&wc);
 
-	//クライアント領域のサイズ
-	const int32_t kClientWidth = 1280;
-	const int32_t kClientHeight = 720;
 
 	//ウィンドウサイズを表す構造体にクライアント領域を入れる
 	RECT wrc = { 0,0,kClientWidth,kClientHeight };
@@ -44,7 +40,7 @@ void WinApp::Initialize()
 		wrc.bottom - wrc.top,	 //ウィンドウ縦幅
 		nullptr,				 //親ウィンドウハンドル
 		nullptr,				 //メニューハンドル
-		wc.hInstance,			 //インスタンスハンドル
+		wc.hInstance,            //インスタンスハンドル
 		nullptr);				 //オプション
 
 	//ウィンドウを表示する
