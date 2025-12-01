@@ -31,4 +31,8 @@ public: //メンバ関数
 	void Update();
 	//終了
 	void Finalize();
+
+	//メッセージの処理
+	bool ProcessMessage();
+
 };

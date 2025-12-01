@@ -1267,34 +1267,36 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	//ウィンドウのxボタンが押されるまでループ
 
-	MSG msg{};
+	//MSG msg{};
 	//ウィンドウのxボタンが押されるまでループ
-	while (msg.message != WM_QUIT) {
+	while (true) {
 		//Windowにメッセージが来てたら最優先で処理させる
-		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+		if(winApp->ProcessMessage())
 		{
-			TranslateMessage(&msg);
-			DispatchMessage(&msg);
-		} else
-		{
-			//キーボード
-			keyboard->Acquire();
-			//前frameの入力を保存
-			memcpy(preKey, key, 256);
+			/*TranslateMessage(&msg);
+			DispatchMessage(&msg);*/
+			break;
 
-			//最新の入力を保存
-			keyboard->GetDeviceState(sizeof(key), key);
-			
-			/*ゲーム処理.
-			Log(std::format("enemyHP:{},textruePath:{}\n", enemyHp, text))*/
+		} //else
+		//{
+		//	//キーボード
+		//	keyboard->Acquire();
+		//	//前frameの入力を保存
+		//	memcpy(preKey, key, 256);
 
-			//数字のキーが押されていたら
-			if (key[DIK_SPACE]&& !preKey[DIK_SPACE])
-			{
-   				OutputDebugStringA("Hit SPACE\n");
-			}
+		//	//最新の入力を保存
+		//	keyboard->GetDeviceState(sizeof(key), key);
+		//	
+		//	/*ゲーム処理.
+		//	Log(std::format("enemyHP:{},textruePath:{}\n", enemyHp, text))*/
 
-		}
+		//	//数字のキーが押されていたら
+		//	if (key[DIK_SPACE]&& !preKey[DIK_SPACE])
+		//	{
+  // 				OutputDebugStringA("Hit SPACE\n");
+		//	}
+
+		//}
 		
 
 		ImGui_ImplDX12_NewFrame();
