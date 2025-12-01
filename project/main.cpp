@@ -1482,9 +1482,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	commandAllocator->Release();
 	indexResourceSprice->Release();
 
-
 	//WindowAPIの終了処理
 	winApp->Finalize();
+
+	//WindowAPI解放
+	delete winApp;
+	winApp = nullptr;
 
 	////ImGuiの終了処理。詳細はさして重要ではないので解説は省略する
 	////こういうもんである。初期化と逆順に行う
