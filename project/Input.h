@@ -1,5 +1,6 @@
 //DirectInputインクルード
 #include<Windows.h>
+#include "WinApp.h"
 #include<wrl.h>
 using namespace Microsoft::WRL;
 #define DIRECTINPUT_VERSION 0x0800
@@ -18,7 +19,7 @@ public:
 	ComPtr<IDirectInput8> directInput;
 
 	//初期化
-	void Initialize(HINSTANCE hInstance,HWND hwnd);
+	void Initialize(WinApp* winApp);
 	void Update();
 
 	//キーボードデバイスの生成
@@ -32,6 +33,9 @@ private:
 	//全キーの状態
 	BYTE key[256] = {};
 	ComPtr<IDirectInputDevice8>keyboard;
+	//WindowsAPI
+	WinApp* winApp_ = nullptr;
+
 
 };
 

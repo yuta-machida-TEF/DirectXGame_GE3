@@ -742,7 +742,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	//入力の初期化
 	input = new Input();
-	input->Initialize(winApp->GetHInstance(),winApp->GetHwnd());
+	input->Initialize(winApp);
 	input->Update();
 
 	//入力解放
@@ -1304,8 +1304,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		ImGui::Begin("Sprite");
 		ImGui::ColorEdit4("material", &materialData->x, ImGuiColorEditFlags_AlphaPreview);
-		//ImGui::DragFloat("rotate.y", &transform.rotate.y, 0.1f);
-		//ImGui::DragFloat3("transform", &transform.translate.x, 0.1f);
 		ImGui::DragFloat2("Sprite transform", &transformSprite.translate.x, 1.0f);
 		ImGui::End();
 
@@ -1313,7 +1311,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		ImGui::ColorEdit4("material", &materialData->x, ImGuiColorEditFlags_AlphaPreview);
 		ImGui::DragFloat("rotate.y", &transform.rotate.y, 0.1f);
 		ImGui::DragFloat3("transform", &transform.translate.x, 0.1f);
-		//ImGui::DragFloat2("transform", &transformSpri.translate.x, 1.0f);
 		ImGui::End();
 		
 		Matrix4x4 worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
@@ -1486,6 +1483,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	indexResourceSprice->Release();
 
 
+	//WindowAPIの終了処理
+	winApp->Finalize();
 
 	////ImGuiの終了処理。詳細はさして重要ではないので解説は省略する
 	////こういうもんである。初期化と逆順に行う

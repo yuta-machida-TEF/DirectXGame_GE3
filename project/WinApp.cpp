@@ -2,7 +2,6 @@
 #include<Windows.h>
 #include "externals/imgui/imgui.h"
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
-#include<cstdint>
 
 
 void WinApp::Initialize()
@@ -50,6 +49,12 @@ void WinApp::Initialize()
 
 void WinApp::Update()
 {
+}
+
+void WinApp::Finalize()
+{
+	CloseWindow(hwnd);
+	CoUninitialize();
 }
 
 LRESULT CALLBACK WinApp::WindowProc(HWND hwnd, UINT msg,

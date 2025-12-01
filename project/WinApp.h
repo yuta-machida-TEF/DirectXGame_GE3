@@ -1,5 +1,6 @@
 #pragma once
 #include<windows.h>
+#include<cstdint>
 
 //WindowsAPI
 class WinApp
@@ -28,5 +29,6 @@ public: //メンバ関数
 	void Initialize();
 	//更新
 	void Update();
-
+	//終了
+	void Finalize();
 };
