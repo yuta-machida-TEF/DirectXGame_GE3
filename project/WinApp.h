@@ -1,6 +1,6 @@
 #pragma once
 #include<windows.h>
-#include<cstdint>
+#include<stdint.h>
 
 //WindowsAPI
 class WinApp
@@ -19,12 +19,8 @@ public:
 	//getter
 	HINSTANCE GetHInstance() const { return wc.hInstance; }
 
-public: //メンバ関数
+	//メンバ関数
 
-	//ウィンドウハンドル
-	HWND hwnd = nullptr;
-
-	WNDCLASS wc{};
 	//初期化
 	void Initialize();
 	//更新
@@ -34,5 +30,11 @@ public: //メンバ関数
 
 	//メッセージの処理
 	bool ProcessMessage();
+
+private:
+	//ウィンドウハンドル
+	HWND hwnd = nullptr;
+
+	WNDCLASS wc{};
 
 };

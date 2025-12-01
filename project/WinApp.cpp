@@ -1,15 +1,39 @@
 #include "WinApp.h"
-#include<Windows.h>
+#include<cstdint>
 #include "externals/imgui/imgui.h"
-extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
+LRESULT CALLBACK WinApp::WindowProc(HWND hwnd, UINT msg,
+	WPARAM wparam, LPARAM lparam)
+{
+	if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wparam, lparam))
+	{
+		return true;
+	}
+
+	//メッセージに応じてゲーム固有の処理を行う
+	switch (msg)
+	{
+	case WM_DESTROY:
+
+		//OSに対して、アプリの終了を伝える
+		PostQuitMessage(0);
+		return 0;
+	}
+
+	//標準のメッセージ処理を行う
+	return DefWindowProc(hwnd, msg, wparam, lparam);
+
+
+}
 
 void WinApp::Initialize()
 {
 	HRESULT hr = CoInitializeEx(0, COINIT_MULTITHREADED);
 
 	//ウィンドウブロシージャ
-	wc.lpfnWndProc = WinApp::WindowProc;
+	wc.lpfnWndProc = WindowProc;
 
 	//ウィンドウクラス(なんでも良い)
 	wc.lpszClassName = L"CG2WindowClass";
@@ -29,7 +53,7 @@ void WinApp::Initialize()
 	AdjustWindowRect(&wrc, WS_OVERLAPPEDWINDOW, false);
 
 	//ウィンドウの生成
-	HWND hwnd = CreateWindow(
+	hwnd = CreateWindow(
 		wc.lpszClassName,        //利用するクラス名
 		L"CG2",                  //タイトルバーの文字(なんでも良い)
 		WS_OVERLAPPEDWINDOW,	 //よく見るウィンドウスタイル
@@ -75,26 +99,3 @@ bool WinApp::ProcessMessage()
 	return false;
 }
 
-LRESULT CALLBACK WinApp::WindowProc(HWND hwnd, UINT msg,
-	WPARAM wparam, LPARAM lparam)
-{
-	if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wparam, lparam))
-	{
-		return true;
-	}
-
-	//メッセージに応じてゲーム固有の処理を行う
-	switch (msg)
-	{
-	case WM_DESTROY:
-
-		//OSに対して、アプリの終了を伝える
-		PostQuitMessage(0);
-		return 0;
-	}
-
-	//標準のメッセージ処理を行う
-	return DefWindowProc(hwnd, msg, wparam, lparam);
-
-
-}

@@ -1,7 +1,12 @@
 #include "Input.h"
 #include<cassert>
+#include<wrl.h>
+
+using namespace Microsoft::WRL;
+
 #pragma comment(lib,"dinput8.lib")
 #pragma comment(lib,"dxguid.lib")
+
 
 void Input::Initialize(WinApp* winApp)
 {
@@ -9,6 +14,9 @@ void Input::Initialize(WinApp* winApp)
 	this->winApp_ = winApp;
 
 	HRESULT result;
+
+	//前回のキー入力を保存
+	memcpy(keyPre, key, sizeof(key));
 
 	//DirectInputのインスタンス生成
 	result = DirectInput8Create(winApp->GetHInstance(), DIRECTINPUT_VERSION, IID_IDirectInput8, (void**)&directInput, nullptr);
@@ -30,8 +38,6 @@ void Input::Initialize(WinApp* winApp)
 
 void Input::Update()
 {
-	//前回のキー入力を保存
-	memcpy(keyPre, key, sizeof(key));
 
 	//キーボードの入力状態の更新
 	keyboard->Acquire();
@@ -56,11 +62,8 @@ bool Input::PushKey(BYTE keyNumber)
 bool Input::TriggerKey(BYTE keyNumber)
 {
 	//指定キーを押していればtrueを返す
-	if (key[keyNumber])
-	{
-		return true;
-	}
+	
+	return (key[keyNumber] != 0 && keyPre[keyNumber] == 0);
 
-	return false;
 }
 

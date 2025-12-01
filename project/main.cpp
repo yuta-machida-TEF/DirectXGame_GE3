@@ -684,58 +684,14 @@ ModelData LoadObjFile(const std::string& directoryPath, const std::string& filen
 //WIndowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	
-	//assert(false && "assertのテストだよ");
 
-	//CoInitializeEx(0, COINIT_MULTITHREADED);
-
-	//ポインタ
-
-	WNDCLASS wc{};
-	//ウィンドウブロシージャ
-	wc.lpfnWndProc = WindowProc;
-
-	//ウィンドウクラス(なんでも良い)
-	wc.lpszClassName = L"CG2WindowClass";
-	//インスタンスハンドル
-	wc.hInstance = GetModuleHandle(nullptr);//スペル間違いを
-	//カーソル
-	wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
-
-	//ウィンドウクラスを登録する
-	RegisterClass(&wc);
-
-	//クライアント領域のサイズ
-	const int32_t kClientWidth = 1280;
-	const int32_t kClientHeight = 720;
-
-	//ポインタ
+	////ポインタ
 	WinApp* winApp = nullptr;
 
 	//WindowsAPIの初期化
 	winApp = new WinApp();
-
-	//ウィンドウサイズを表す構造体にクライアント領域を入れる
-	RECT wrc = { 0,0,kClientWidth,kClientHeight };
-
-	//クライアント領域を元に実際のサイズにwrcを変更してもらう
-	AdjustWindowRect(&wrc, WS_OVERLAPPEDWINDOW, false);
-
-	//ウィンドウの生成
-	HWND hwnd = CreateWindow(
-		wc.lpszClassName,        //利用するクラス名
-		L"CG2",                  //タイトルバーの文字(なんでも良い)
-		WS_OVERLAPPEDWINDOW,	 //よく見るウィンドウスタイル
-		CW_USEDEFAULT,			 //表示X座標(Windowsに任せる)
-		CW_USEDEFAULT,			 //表示Y座標(WindowsOSに任せる)
-		wrc.right - wrc.left,	 //ウィンドウ横幅
-		wrc.bottom - wrc.top,	 //ウィンドウ縦幅
-		nullptr,				 //親ウィンドウハンドル
-		nullptr,				 //メニューハンドル
-		winApp->GetHInstance(),			 //インスタンスハンドル
-		nullptr);				 //オプション
-
-	//ウィンドウを表示する
-	ShowWindow(hwnd, SW_SHOW);
+	winApp->Initialize();
+	winApp->Update();
 
 	//ポインタ
 	Input* input = nullptr;
@@ -745,8 +701,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	input->Initialize(winApp);
 	input->Update();
 
-	//入力解放
-	delete input;
+	
 
 #ifdef _DEBUG//DEBUGはCreateWindowの直後
 
@@ -764,7 +719,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	IDXGIFactory7* dxgiFactory = nullptr;
 	//メインスレッドではMTAでCOM利用
 	HRESULT hr = CoInitializeEx(0, COINIT_MULTITHREADED);
-	//hr = CreateDXGIFactory(IID_PPV_ARGS(&dxgiFactory));
+	hr = CreateDXGIFactory(IID_PPV_ARGS(&dxgiFactory));
 	assert(SUCCEEDED(hr));
 
 	//使用するアダブタ用の変数。最初にnullptrを入れておく
@@ -925,7 +880,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//hr = device->CreateCommandQueue(&commandQueueDesc, IID_PPV_ARGS(&commandQueue));
 
 	// DepthStencilTextureをウィンドウのサイズで作成
-	ID3D12Resource* depthStencilResource = CreateDepthStencilTextureResource(device, WinApp::kClientWidth, kClientHeight);
+    //ID3D12Resource* depthStencilResource = CreateDepthStencilTextureResource(device, WinApp::kClientWidth, kClientHeight);
 
 	//dxcCompilerを初期化
 	IDxcUtils* dxcUtlis = nullptr;
@@ -1105,9 +1060,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	assert(SUCCEEDED(hr));
 
 	//排他制御レベルのセット
-	hr = keyboard->SetCooperativeLevel(
-		hwnd, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE | DISCL_NOWINKEY);
-	assert(SUCCEEDED(hr));
+	/*hr = keyboard->SetCooperativeLevel(
+		winApp->GetHInstance(), DISCL_FOREGROUND | DISCL_NONEXCLUSIVE | DISCL_NOWINKEY);
+	assert(SUCCEEDED(hr));*/
 
 	//モデル読み込み
 	ModelData modelData = LoadObjFile("resources", "plane.obj");
@@ -1124,8 +1079,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//ビューボート
 	D3D12_VIEWPORT viewport{};
 	//クライアント領域のサイズと一緒にして画面全体に表示
-	viewport.Width = kClientWidth;
-	viewport.Height = kClientHeight;
+	viewport.Width = WinApp::kClientWidth;
+	viewport.Height = WinApp::kClientHeight;
 	viewport.TopLeftX = 0;
 	viewport.TopLeftY = 0;
 	viewport.MinDepth = 0.0f;
@@ -1137,7 +1092,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	scissorRect.left = 0;
 	scissorRect.right = WinApp::kClientWidth;
 	scissorRect.top = 0;
-	scissorRect.bottom = kClientHeight;
+	scissorRect.bottom = WinApp::kClientHeight;
 
 	//Transform変数を作る。
 	Transform cameraTransform{ {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,-5.0f} };
@@ -1148,7 +1103,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGui::StyleColorsDark();
-	ImGui_ImplWin32_Init(hwnd);
+	ImGui_ImplWin32_Init(winApp->GetHwnd());
 	ImGui_ImplDX12_Init(device,
 		swapChainDesc.BufferCount,
 		rtvDesc.Format,
@@ -1184,7 +1139,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc{};
 	dsvDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;//Format。基本的にはResourceに合わせる
 	dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;//2dTexture
-	device->CreateDepthStencilView(depthStencilResource, &dsvDesc, dsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
+	//device->CreateDepthStencilView(depthStencilResource, &dsvDesc, dsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
 
 	//Sprite用の頂点リソースを作る
 	ID3D12Resource* vertexResourceSprite = CreateBufferResource(device, sizeof(VertexData) * 6);
@@ -1262,41 +1217,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	BYTE key[256]{};
 	BYTE preKey[256]{};
 
-	winApp->Initialize();
-	delete winApp;
 
-	//ウィンドウのxボタンが押されるまでループ
-
-	//MSG msg{};
 	//ウィンドウのxボタンが押されるまでループ
 	while (true) {
 		//Windowにメッセージが来てたら最優先で処理させる
 		if(winApp->ProcessMessage())
 		{
-			/*TranslateMessage(&msg);
-			DispatchMessage(&msg);*/
 			break;
-
-		} //else
-		//{
-		//	//キーボード
-		//	keyboard->Acquire();
-		//	//前frameの入力を保存
-		//	memcpy(preKey, key, 256);
-
-		//	//最新の入力を保存
-		//	keyboard->GetDeviceState(sizeof(key), key);
-		//	
-		//	/*ゲーム処理.
-		//	Log(std::format("enemyHP:{},textruePath:{}\n", enemyHp, text))*/
-
-		//	//数字のキーが押されていたら
-		//	if (key[DIK_SPACE]&& !preKey[DIK_SPACE])
-		//	{
-  // 				OutputDebugStringA("Hit SPACE\n");
-		//	}
-
-		//}
+		} 
 		
 
 		ImGui_ImplDX12_NewFrame();
@@ -1318,14 +1246,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		Matrix4x4 worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
 		Matrix4x4 cameraMatrix = MakeAffineMatrix(cameraTransform.scale, cameraTransform.rotate, cameraTransform.translate);
 		Matrix4x4 viewMatrix = Inverse(cameraMatrix);
-		Matrix4x4 projectionMatrix = MakePerspectiveFovMatrix(0.45f, float(kClientWidth) / float(kClientHeight), 0.1f, 100.0f);
+		Matrix4x4 projectionMatrix = MakePerspectiveFovMatrix(0.45f, float(WinApp::kClientWidth) / float(WinApp::kClientHeight), 0.1f, 100.0f);
 		Matrix4x4 worldViewProjectionMatrix = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
 		*wvpData = worldViewProjectionMatrix;
 
 		//SPrite用のWorldViewProjectionMatrixを作る
 		Matrix4x4 worldMatrixSprite = MakeAffineMatrix(transformSprite.scale, transformSprite.rotate, transformSprite.translate);
 		Matrix4x4 viewMatrixSprite = MakeIdentity4x4();
-		Matrix4x4 projectionMatrixSprite = MakeOrthographicMatrix(0.0f, 0.0f, float(WinApp::kClientWidth), float(kClientHeight), 0.0f, 100.0f);
+		Matrix4x4 projectionMatrixSprite = MakeOrthographicMatrix(0.0f, 0.0f, float(WinApp::kClientWidth), float(WinApp::kClientHeight), 0.0f, 100.0f);
 		Matrix4x4 worldViewProjectionMatrixSprite = Multiply(worldMatrixSprite, Multiply(viewMatrixSprite, projectionMatrixSprite));
 		*transformationMatrixDataSPrite = worldViewProjectionMatrixSprite;
 
@@ -1361,15 +1289,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		commandList->ClearRenderTargetView(rtvHandles[backBuffetIndex], clearColor, 0, nullptr);
 
 		//描画先のRTVとDSVを設定する
-		D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
-		commandList->OMSetRenderTargets(1, &rtvHandles[backBuffetIndex], false, &dsvHandle);
+		/*D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+		commandList->OMSetRenderTargets(1, &rtvHandles[backBuffetIndex], false, &dsvHandle);*/
 
 
 		//描画用のDescriptorHeapの設定
 		ID3D12DescriptorHeap* descriptorHeaps[] = { srvDescriptorHeap };
 		commandList->SetDescriptorHeaps(1, descriptorHeaps);
 		//指定した深度で画面全体をクリアする
-		commandList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+		//commandList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 
 		commandList->RSSetViewports(1, &viewport);//Viewportを設定
 		commandList->RSSetScissorRects(1, &scissorRect);//Scirssorを設定
@@ -1388,7 +1316,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		
 
 		//描画!(DrawCall/ドローコール)。3頂点で1つのインタランス。インタランスについては今後
-		commandList->DrawInstanced(UINT(modelData.vertices.size()), 1, 0, 0);
+		//commandList->DrawInstanced(UINT(modelData.vertices.size()), 1, 0, 0);
 
 		//Spriteの描画。変更が必要なものだけ変更する
 		commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSprite);//VBVを設定
@@ -1399,7 +1327,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		//描画! (DrawCall/ドローコール)
 		//commandList->DrawInstanced(6, 1, 0, 0);
 		//描画! (DrawCall/ドローコール)6個のインデックスを使用し1つのインタランスを描画。その他は当面で良い
-	    commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
+	    //commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
 
 
 		//実際のcommandListのImGuiの描画コマンドを積む
@@ -1477,19 +1405,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	wvpResource->Release();
 	textureResource->Release();
-	depthStencilResource->Release();
+	//depthStencilResource->Release();
 	dsvDescriptorHeap->Release();
 	srvDescriptorHeap->Release();
 	commandList->Release();
 	commandAllocator->Release();
 	indexResourceSprice->Release();
-
-	//WindowAPIの終了処理
-	winApp->Finalize();
-
-	//WindowAPI解放
-	delete winApp;
-	winApp = nullptr;
 
 	////ImGuiの終了処理。詳細はさして重要ではないので解説は省略する
 	////こういうもんである。初期化と逆順に行う
@@ -1502,7 +1423,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 #ifdef _DEBUG
 	debugController->Release();
 #endif // _DEBUG
-	CloseWindow(hwnd);
+	//CloseWindow(hwnd);
 
 	//警告時に止まる
 	//infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, true);
@@ -1518,6 +1439,17 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	}
 
 	CoUninitialize();
+
+	//入力解放
+	delete input;
+
+	//WindowAPIの終了処理
+	winApp->Finalize();
+
+	//WindowAPI解放
+	delete winApp;
+	winApp = nullptr;
+
 
 	return 0;
 }
