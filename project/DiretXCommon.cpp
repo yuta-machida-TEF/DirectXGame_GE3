@@ -2,77 +2,87 @@
 
 void DirectXCommon::Initialize()
 {
-	//1.Textureデータを読む
-	//DirectX::ScratchImage LoadTexture(const std::string & filePath)
-	//{
-	//	//テクスチャファイルを読んでプログラムで扱えるようにする
-	//	DirectX::ScratchImage image{};
-	//	std::wstring filePathW = ConverString(filePath);
-	//	HRESULT hr = DirectX::LoadFromWICFile(filePathW.c_str(), DirectX::WIC_FLAGS_FORCE_SRGB, nullptr, image);
-	//	assert(SUCCEEDED(hr));
-
-	//	//ミニマップの作成
-	//	DirectX::ScratchImage mipImages{};
-	//	hr = DirectX::GenerateMipMaps(image.GetImages(), image.GetImageCount(),
-	//		image.GetMetadata(), DirectX::TEX_FILTER_SRGB, 0, mipImages);
-
-	//	//ミニマップ付きのデータを返す
-	//	return mipImages;
-	//}
-
-	//2.DIrectX12のTextureResourceを作る
-	//ID3D12Resource* CreateTextureResource(ID3D12Device * device, const DirectX::TexMetadata & metadata)
-	//{
-	//	//1.metadataを基にResourceの設定
-	//	D3D12_RESOURCE_DESC resourceDesc{};
-	//	resourceDesc.Width = UINT(metadata.width);//Textureの幅
-	//	resourceDesc.Height = UINT(metadata.height);//Textureの高さ
-	//	resourceDesc.MipLevels = UINT16(metadata.mipLevels);//mipmapの数
-	//	resourceDesc.DepthOrArraySize = UINT16(metadata.arraySize);//奥行き or 配列Textureの配列数
-	//	resourceDesc.Format = metadata.format;//TextureのFormat
-	//	resourceDesc.SampleDesc.Count = 1;//サンプリングカウント。1固定
-	//	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION(metadata.dimension);//Textureの次元数。普段使っているのは2次元
-
-	//	//2.利用するHeapの設定。非常に特殊な運用。02_04exで一般的なケース版がある
-	//	D3D12_HEAP_PROPERTIES heapProperties{};
-	//	heapProperties.Type = D3D12_HEAP_TYPE_CUSTOM;//細かい設定を行う
-	//	heapProperties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_WRITE_BACK;//WriteBackポリシーでCPUアクセス可能
-	//	heapProperties.MemoryPoolPreference = D3D12_MEMORY_POOL_L0;//プロセッサの近くに配置
-
-	//	//3.Resourceを生成
-	//	ID3D12Resource* resource = nullptr;
-	//	HRESULT hr = device->CreateCommittedResource(
-	//		&heapProperties,//Heapの設定
-	//		D3D12_HEAP_FLAG_NONE,//Heapの特殊な設定。特になし。
-	//		&resourceDesc,//Resourceの設定
-	//		D3D12_RESOURCE_STATE_GENERIC_READ,//初回のResourceState。Textureは基本読むだけ
-	//		nullptr,//Clear最適値。使わないのでnullptr
-	//		IID_PPV_ARGS(&resource));//作成するResourceポインタへのポインタ
-	//	assert(SUCCEEDED(hr));
-	//	return resource;
-	//}
-
-	//3.TextureResourceにデータを転送する
-	//void UploadTextureData(ID3D12Resource * texture, const DirectX::ScratchImage & mipImages)
-	//{
-	//	//Meta情報を取得
-	//	const DirectX::TexMetadata& metadata = mipImages.GetMetadata();
-	//	//全MipMapについて
-	//	for (size_t mipLevel = 0; mipLevel < metadata.mipLevels; mipLevel++)
-	//	{
-	//		//MipMapLevelを指定して各Imageを取得
-	//		const DirectX::Image* img = mipImages.GetImage(mipLevel, 0, 0);
-	//		//Textureに転送
-	//		HRESULT hr = texture->WriteToSubresource(
-	//			UINT(mipLevel),
-	//			nullptr,//全領域へコピー
-	//			img->pixels,//元データアドレス
-	//			UINT(img->rowPitch),//1ラインサイズ
-	//			UINT(img->slicePitch)//1枚サイズ
-	//		);
-	//		assert(SUCCEEDED(hr));
-	//	}
-
-	//}
+//	//DXGIファクトリーの生成
+//	IDXGIFactory7* dxgiFactory = nullptr;
+//	//メインスレッドではMTAでCOM利用
+//	HRESULT hr = CoInitializeEx(0, COINIT_MULTITHREADED);
+//	hr = CreateDXGIFactory(IID_PPV_ARGS(&dxgiFactory));
+//	assert(SUCCEEDED(hr));
+//
+//	//使用するアダブタ用の変数。最初にnullptrを入れておく
+//	IDXGIAdapter4* useAdapter = nullptr;
+//	//よい順にアダブタを頼む
+//	for (UINT i = 0; dxgiFactory->EnumAdapterByGpuPreference(i,
+//		DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&useAdapter)) !=
+//		DXGI_ERROR_NOT_FOUND; i++)
+//	{
+//		//アダブターの情報を取得する
+//		DXGI_ADAPTER_DESC3 adapterDesc{};
+//		hr = useAdapter->GetDesc3(&adapterDesc);
+//		assert(SUCCEEDED(hr));//取得できないのは一大事
+//		//ソフトウェアアダブタでなければ採用!
+//		if (!(adapterDesc.Flags & DXGI_ADAPTER_FLAG3_SOFTWARE))
+//		{
+//			Log(ConverString(std::format(L"Use Adapater:{}\n", adapterDesc.Description)));//ここのエラーは、0-5の補足教材にある
+//			break;
+//		}
+//		useAdapter = nullptr;
+//	}
+//	//適切なアダブタが見つからなかったので起動できない
+//	assert(useAdapter != nullptr);
+//
+//	ID3D12Device* device = nullptr;
+//	//機能レベルとログ出力用の文字列
+//	D3D_FEATURE_LEVEL featrueLevels[] = {
+//		D3D_FEATURE_LEVEL_12_2,D3D_FEATURE_LEVEL_12_1,D3D_FEATURE_LEVEL_12_0
+//	};
+//	const char* featureLevelStrings[] = { "12.2","12.1","12.0" };
+//	//高い順に生成できるか試していく
+//	for (size_t i = 0; i < _countof(featrueLevels); i++)
+//	{
+//		hr = D3D12CreateDevice(useAdapter, featrueLevels[i], IID_PPV_ARGS(&device));
+//		//指定した機能レベルでデバイスが生成できたかを確認
+//		if (SUCCEEDED(hr))
+//		{
+//			//生成できたのでログ出力を行ってループを抜ける
+//			Log(std::format("FeatureLevel : {}\n", featureLevelStrings[i]));
+//			break;
+//		}
+//	}
+//
+//	//デバイスの生成がうまくいかなかったので起動できない
+//	assert(device != nullptr);
+//	Log("Complete create D3D12Drivice!!!\n");//初期化完了のログをだす
+//
+//
+//#ifdef _DEBUG
+//	ID3D12InfoQueue* infoQueue = nullptr;
+//	if (SUCCEEDED(device->QueryInterface(IID_PPV_ARGS(&infoQueue))))
+//	{
+//		//ヤバいエラー時に止まる
+//		infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, true);
+//		//エラー時に止まる
+//		infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);
+//		//警告時に止まる
+//		infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, true);
+//		//抑制するメッセージのID
+//		D3D12_MESSAGE_ID denyIds[] = {
+//			//Windows11でのDXGIデバックレイヤーとDX12デバックレイヤーの相互作用バグによるエラーメッセージ
+//			//https://stackoberflow.com/questions/69805245/directx-12-application-is-crashing-in-windows-11
+//			D3D12_MESSAGE_ID_RESOURCE_BARRIER_MISMATCHING_COMMAND_LIST_TYPE
+//		};
+//		//抑制するレベル
+//		D3D12_MESSAGE_SEVERITY severities[] = { D3D12_MESSAGE_SEVERITY_INFO };
+//		D3D12_INFO_QUEUE_FILTER filter{};
+//		filter.DenyList.NumIDs = _countof(denyIds);
+//		filter.DenyList.pIDList = denyIds;
+//		filter.DenyList.NumSeverities = _countof(severities);
+//		filter.DenyList.pSeverityList = severities;
+//		//指定したメッセージの表示を抑制する
+//		infoQueue->PushStorageFilter(&filter);
+//
+//		//解放
+//		infoQueue->Release();
+//	}
 
 }
