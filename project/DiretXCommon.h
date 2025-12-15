@@ -3,75 +3,92 @@
 #include<dxgi1_6.h>
 #include<wrl.h>
 #include "WinApp.h"
+#include"logger.h"
+#include"StringUtility.h"
+#include<array>
+
+class DirectX;
 
 //DirectX基盤
 class DirectXCommon
 {
-	//メンバ関数
+
 public:
-	//初期化
-	void Initialize();
-	void commandIze();
-	void deviceIze();
-	void swapIze();
-	void depthIze();
-	void DescriptorIze();
-	void RenderIze();
 
-	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE heapType, UINT numDesceriptors,
-		bool shaderVisible);
+	HRESULT hr;
 
-	//コマンドキューを生成する
-	ID3D12CommandQueue* commandQueue = nullptr;
-	D3D12_COMMAND_QUEUE_DESC commandQueueDesc{};
-	hr = device->CreateCommandQueue(&commandQueueDesc, IID_PPV_ARGS(&commandQueue));
-	//コマンドキューの生成がうまくいかなかったので起動できない
-	assert(SUCCEEDED(hr));
+	ID3D12Resource* CreateBufferResource(ID3D12Device* device, size_t sizeInBytes);
+	ID3D12DescriptorHeap* CreateDescriptorHeap(ID3D12Device* device, D3D12_DESCRIPTOR_HEAP_TYPE DescHeap, UINT DESCRIPTOR, bool createShader);
+	ID3D12Resource* CreateDepthStencilTextureResource(ID3D12Device* device, int32_t width, int32_t height);
 
-	//コマンドアロケータを生成する
-	ID3D12CommandAllocator* commandAllocator = nullptr;
-	hr = device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&commandAllocator));
-	assert(SUCCEEDED(hr));
+	ID3D12Device* GetDxDevice()const { return device.Get(); }
 
-	//コマンドリストを生成する
-	ID3D12GraphicsCommandList* commandList = nullptr;
-	hr = device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, commandAllocator, nullptr,
-		IID_PPV_ARGS(&commandList));
-	assert(SUCCEEDED(hr));
+	IDXGISwapChain4* GetSwapChain()const { return swapChain; }
 
-	//スワップチェーンを生成する
+	//コマンド
+	//スワップチェーン
 	IDXGISwapChain4* swapChain = nullptr;
 	DXGI_SWAP_CHAIN_DESC1 swapChainDesc{};
-	swapChainDesc.Width = WinApp::kClientWidth;
-	swapChainDesc.Height = WinApp::kClientHeight;
-	swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	swapChainDesc.SampleDesc.Count = 1;
-	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-	swapChainDesc.BufferCount = 2;
-	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-	//コマンドキュー、ウィンドウハンドル、設定を渡して生成する
-	hr = dxgiFactory->CreateSwapChainForHwnd(commandQueue,
-		winApp->GetHwnd(),
-		&swapChainDesc,
-		nullptr,
-		nullptr,
-		reinterpret_cast<IDXGISwapChain1**>(&swapChain));
+	//フェンス
+	ID3D12Fence* fence = nullptr;
+	//rtv
+	D3D12_RENDER_TARGET_VIEW_DESC rtvDesc{};
 
-	//SwapChainからResourceを引っ張ってくる
-	ID3D12Resource* swapChainResources[2] = { nullptr };
-	hr = swapChain->GetBuffer(0, IID_PPV_ARGS(&swapChainResources[0]));
 
-	//うまく取得できなけらば起動できない
-	assert(SUCCEEDED(hr));
-	hr = swapChain->GetBuffer(1, IID_PPV_ARGS(&swapChainResources[1]));
-	assert(SUCCEEDED(hr));
+	//RTV Heap
+	ID3D12DescriptorHeap* rtvDescriptorHeap = nullptr;
+	//SRV Heap
+	ID3D12DescriptorHeap* srvDescriptorHeap = nullptr;
+	//DSV Heap
+	ID3D12DescriptorHeap* dsvDescriptorHeap = nullptr;
 
+	//初期化
+	void Initialize();
+	void Device();
+	void commandIze();//コマンド関連の初期化
+	void swapIze();//スワップチェーンの生成
+	void depthIze(ID3D12Device* device, int32_t width, int32_t height);//深度バッファの生成
+	void DescriptorIze();//各種デスクリプタヒープの生成
+	void RenderIze();//レンダーターゲットビューの初期化
+	void viewRectangle();//ビューポート短形
+	void ShortRectangle();//シザリング短形
+	void dxcCommon();//DXCコンパイラの生成
+	void ImguiIze(ID3D12Device* device);//IMGuiの初期化
+	
+	//スワップチェーンリソース
+	std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, 2>swapChainResources;
+
+	//SRVの指定番号のCPUデスクリプタハンドルを取得する
+	D3D12_CPU_DESCRIPTOR_HANDLE GetSRVCPUDescriptorHandle(uint32_t index);
+
+	//SRVの指定番号のGPUデスクリプタハンドルを取得する
+	D3D12_CPU_DESCRIPTOR_HANDLE GetSRVGPUDescriptorHandle(uint32_t index);
+
+	
 private:
 	//DirectX12デバイス
 	Microsoft::WRL::ComPtr<ID3D12Device> device;
 	//DXGIファクトリ
 	Microsoft::WRL::ComPtr<IDXGIFactory7>dxgiFactory;
+
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>CreateDescriptorHeap
+	(
+		D3D12_DESCRIPTOR_HEAP_TYPE descriptorHeap, 
+		UINT Descriptors, 
+		bool HeapShader);
+
 	//WindowsAPI
 	WinApp* winApp = nullptr;
+
+	//指定番号のCPUデスクリプタハンドルを取得する
+	static D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescriptorHandle(const Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>& descriptorHeap,
+		uint32_t descriptorSize, uint32_t index);
+
+private:
+
+	void CreateDescriptorHeap();
+	void RenderTargetView();
+	void DepthStencilView();
+	void ViewPort();
 
 };
