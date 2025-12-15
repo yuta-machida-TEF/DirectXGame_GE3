@@ -20,7 +20,7 @@ public:
 	ID3D12Resource* CreateBufferResource(ID3D12Device* device, size_t sizeInBytes);
 	ID3D12DescriptorHeap* CreateDescriptorHeap(ID3D12Device* device, D3D12_DESCRIPTOR_HEAP_TYPE DescHeap, UINT DESCRIPTOR, bool createShader);
 	ID3D12Resource* CreateDepthStencilTextureResource(ID3D12Device* device, int32_t width, int32_t height);
-
+	
 	ID3D12Device* GetDxDevice()const { return device.Get(); }
 
 	IDXGISwapChain4* GetSwapChain()const { return swapChain; }
@@ -34,6 +34,11 @@ public:
 	//rtv
 	D3D12_RENDER_TARGET_VIEW_DESC rtvDesc{};
 
+	//コマンドリストを生成する
+	ID3D12GraphicsCommandList* commandList = nullptr;
+
+	//RTVを2つ作るのでディスクリプタを2つ用意
+	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandles[2];
 
 	//RTV Heap
 	ID3D12DescriptorHeap* rtvDescriptorHeap = nullptr;
@@ -64,6 +69,10 @@ public:
 	//SRVの指定番号のGPUデスクリプタハンドルを取得する
 	D3D12_CPU_DESCRIPTOR_HANDLE GetSRVGPUDescriptorHandle(uint32_t index);
 
+	//描画前処理
+	void PreDraw();
+	//描画後処理
+	void PostDraw();
 	
 private:
 	//DirectX12デバイス
@@ -85,6 +94,7 @@ private:
 		uint32_t descriptorSize, uint32_t index);
 
 private:
+
 
 	void CreateDescriptorHeap();
 	void RenderTargetView();

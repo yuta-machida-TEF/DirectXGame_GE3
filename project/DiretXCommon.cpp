@@ -358,14 +358,6 @@ void DirectXCommon::Initialize()
 	//メンバ関数に記録
 	this->winApp = winApp;
 
-	//DirectXCommon::swapIze();
-	//DirectXCommon::depthIze();
-	//DirectXCommon::DescriptorIze();
-	//DirectXCommon::RenderIze();
-	//DirectXCommon::viewRectangle();//ビューポート短形
-	//DirectXCommon::ShortRectangle();//シザリング短形
-	//DirectXCommon::dxcCommon();//DXCコンパイラの生成
-	//DirectXCommon::ImguiIze();//IMGuiの初期化
 
 #ifdef _DEBUG//DEBUGはCreateWindowの直後
 
@@ -419,12 +411,6 @@ void DirectXCommon::Device()
 		DXGI_ADAPTER_DESC3 adapterDesc{};
 		hr = useAdapter->GetDesc3(&adapterDesc);
 		assert(SUCCEEDED(hr));//取得できないのは一大事
-		////ソフトウェアアダブタでなければ採用!
-		//if (!(adapterDesc.Flags & DXGI_ADAPTER_FLAG3_SOFTWARE))
-		//{
-		//	Log(ConvertString(std::format(L"Use Adapater:{}\n", adapterDesc.Description)));//ここのエラーは、0-5の補足教材にある
-		//	break;
-		//}
 		useAdapter = nullptr;
 	}
 	//適切なアダブタが見つからなかったので起動できない
@@ -712,5 +698,23 @@ D3D12_CPU_DESCRIPTOR_HANDLE DirectXCommon::GetSRVCPUDescriptorHandle(uint32_t in
 D3D12_CPU_DESCRIPTOR_HANDLE DirectXCommon::GetSRVGPUDescriptorHandle(uint32_t index)
 {
 	return D3D12_CPU_DESCRIPTOR_HANDLE();
+}
+
+void DirectXCommon::PreDraw()
+{
+	DirectXCommon* dxCommon = DirectXCommon::GetSwapChain();
+
+	//これから書き込むバックバッファのインデックスを取得
+	UINT backBuffetIndex = swapChain->GetCurrentBackBufferIndex();
+
+	//描画先のRTVを設定する
+		commandList->OMSetRenderTargets(1, &rtvHandles[backBuffetIndex], false, nullptr);
+		//指定した色で画面全体をクリアする
+		float clearColor[] = { 0.1f,0.25f,0.5f,1.0f };
+		commandList->ClearRenderTargetView(rtvHandles[backBuffetIndex], clearColor, 0, nullptr);
+}
+
+void DirectXCommon::PostDraw()
+{
 }
 

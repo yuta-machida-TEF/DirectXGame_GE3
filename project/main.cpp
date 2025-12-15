@@ -638,6 +638,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			break;
 		} 
 		
+		//描画後処理
+		
 
 //		ImGui_ImplDX12_NewFrame();
 //		ImGui_ImplWin32_NewFrame();
