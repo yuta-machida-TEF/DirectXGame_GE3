@@ -6,12 +6,10 @@
 #include"logger.h"
 #include"StringUtility.h"
 #include<array>
-
+#include <dxcapi.h>
+#include <string>
+#include "externals/DirectXTex-mar2023/DirectXTex/DirectXTex.h"
 #include <chrono>
-
-
-
-class DirectX;
 
 //DirectX基盤
 class DirectXCommon
@@ -24,20 +22,27 @@ public:
 	ID3D12Resource* CreateBufferResource(ID3D12Device* device, size_t sizeInBytes);
 	ID3D12DescriptorHeap* CreateDescriptorHeap(ID3D12Device* device, D3D12_DESCRIPTOR_HEAP_TYPE DescHeap, UINT DESCRIPTOR, bool createShader);
 	ID3D12Resource* CreateDepthStencilTextureResource(ID3D12Device* device, int32_t width, int32_t height);
-	//コマンドリストを生成する
-	ID3D12GraphicsCommandList* commandList = nullptr;
 
 
 	ID3D12Device* GetDxDevice()const { return device.Get(); }
 
+	ID3D12GraphicsCommandList* GetCommandList()
+	{
+		return commandList.Get();
+	}
 
 
-	IDXGISwapChain4* GetSwapChain()const { return swapChain; }
 
-	//コマンド
+	//コマンドキュー
+	Microsoft::WRL::ComPtr<ID3D12CommandQueue> commandQueue;
+
+
 	//スワップチェーン
-	IDXGISwapChain4* swapChain = nullptr;
+	//スワップチェーン
+	Microsoft::WRL::ComPtr<IDXGISwapChain4> swapChain;
+
 	DXGI_SWAP_CHAIN_DESC1 swapChainDesc{};
+
 	//フェンス
 	ID3D12Fence* fence = nullptr;
 	//rtv
@@ -53,6 +58,14 @@ public:
 	//DSV Heap
 	ID3D12DescriptorHeap* dsvDescriptorHeap = nullptr;
 
+
+	Microsoft::WRL::ComPtr<ID3D12Resource>CreateTextureResource(const DirectX::TexMetadata& metadata);
+
+	Microsoft::WRL::ComPtr<ID3D12Resource>UploadTextureData(Microsoft::WRL::ComPtr<ID3D12Resource> texture, const DirectX::ScratchImage& mipImages);
+
+	static DirectX::ScratchImage LoadTexture(const std::string& filePath);
+
+
 	//初期化
 	void Initialize();
 	void Device();
@@ -66,6 +79,10 @@ public:
 	void dxcCommon();//DXCコンパイラの生成
 	void ImguiIze(ID3D12Device* device);//IMGuiの初期化
 	
+	void CreateRTV();
+	
+
+
 	//スワップチェーンリソース
 	std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, 2>swapChainResources;
 
@@ -92,14 +109,13 @@ private:
 		UINT Descriptors, 
 		bool HeapShader);
 
+	//コマンドアロケータ
+	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> commandAllocator;
+
 	//コマンドリスト
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList;
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> CreateBufferResource(size_t sizeInBytes);
-
-	Microsoft::WRL::ComPtr<ID3D12Resource>CreateTextureResource(const DirectX::TexMetadata& metadata);
-
-	Microsoft::WRL::ComPtr<ID3D12Resource>UploadTextureData(Microsoft::WRL::ComPtr<ID3D12Resource> texture, const DirectX::ScratchImage& mipImages);
 
 
 	//WindowsAPI
@@ -109,12 +125,14 @@ private:
 	static D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescriptorHandle(const Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>& descriptorHeap,
 		uint32_t descriptorSize, uint32_t index);
 
+	//TransitionBarrier
+	static D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescriptorHandle(Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> descriptorHeap, uint32_t descriptorSize, uint32_t index);
+
+	static D3D12_GPU_DESCRIPTOR_HANDLE GetGPUDescriptorHandle(Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> descriptorHeap, uint32_t descriptorSize, uint32_t index);
+
+	D3D12_RESOURCE_BARRIER barrier{};
+
 private:
-
-	//コマンドリスト
-	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList;
-
-	static DirectX::ScratchImage LoadTexture(const std::string& filePath);
 
 	void CreateDescriptorHeap();
 	void RenderTargetView();

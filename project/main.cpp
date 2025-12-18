@@ -4,14 +4,13 @@
 #include<cassert>
 #include<dxgidebug.h>
 #include "Input.h"
-#include "externals/DirectXTex-mar2023/DirectXTex/DirectXTex.h"
-
+#include "DiretXCommon.h"
 //DirectInputインクルード
 #define DIRECTINPUT_VERSION 0x0800
 #include <dinput.h>
 #pragma comment(lib,"d3d12.lib")
 #pragma comment(lib,"dxgi.lib")
-#include <dxcapi.h>
+
 #pragma comment(lib, "dxcompiler.lib")
 #include<fstream>
 #include<sstream>
@@ -93,72 +92,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg,
 }
 
 
-IDxcBlob* CompileShader(
-	//CompilerするShaderファイルへのパス
-	const std::wstring& filePath,
-	//Compilerに使用するProfile
-	const wchar_t* profile,
-	//初期化で生成したものを3つ
-	IDxcUtils* dxcUtils,
-	IDxcCompiler3* dxcComppiler,
-	IDxcIncludeHandler* includeHandler)
-{
-	//1,hlslファイルを読む
-	//Log(ConverString(std::format(L"Resources/shader/Begin CompileShader,path:{},profile:{}\n", filePath, profile)));
-	//hlslファイルを読む
-	IDxcBlobEncoding* shaderSource = nullptr;
-	HRESULT hr = dxcUtils->LoadFile(filePath.c_str(), nullptr, &shaderSource);
-	//読めなかったら止める
-	assert(SUCCEEDED(hr));
-	//読み込んだファイルの内容を設定する
-	DxcBuffer shaderSourceBuffer;
-	shaderSourceBuffer.Ptr = shaderSource->GetBufferPointer();
-	shaderSourceBuffer.Size = shaderSource->GetBufferSize();
-	shaderSourceBuffer.Encoding = DXC_CP_UTF8;//UTFT8の文字コードであることを通知
-	//2.Compileする
-	LPCWSTR arguments[] = {
-		 filePath.c_str(),//コンパイル対象のhlslファイル名
-		 L"-E",L"main",//エントリーポイントの指定。基本的にmain以外にはしない
-		 L"-T",profile,//ShaderProfileの設定
-		 L"-Zi",L"-Qembed_debug",//デバック用の情報を埋め込む
-		 L"-Od",//最適化を外しておく
-		 L"-Zpr",//メモリレイアウトは行優先
-	};
-	//実際にShaderをコンパイルする
-	IDxcResult* shaderResult = nullptr;
-	hr = dxcComppiler->Compile(
-		&shaderSourceBuffer,//読み込んだファイル
-		arguments,//コンパイルオプション
-		_countof(arguments),//コンパイルオプションの数
-		includeHandler,//includeが含まれた諸々
-		IID_PPV_ARGS(&shaderResult)
-	);
-	//コンパイルエラーではなくdxcが起動できないなど致命的な状況
-	assert(SUCCEEDED(hr));
 
-	//3.警告・エラーがでていないか確認する
-	IDxcBlobUtf8* shaderError = nullptr;
-	shaderResult->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(&shaderError), nullptr);
-	if (shaderError != nullptr && shaderError->GetStringLength() != 0)
-	{
-		Log(shaderError->GetStringPointer());
-		//警告・エラーダメゼッタイ
-		assert(false);
-
-	}
-
-	//4.Compile結果を受け取って返す
-	IDxcBlob* shaderBlob = nullptr;
-	hr = shaderResult->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(&shaderBlob), nullptr);
-	assert(SUCCEEDED(hr));
-	//成功したログを出す
-	//Log(ConverString(std::format(L"Resources/shader/Compile Succeeded,path:{},profile:{}\n", filePath, profile)));
-	//もう使わないリソースを解放
-	shaderSource->Release();
-	shaderResult->Release();
-	//実行用のパイナリを返却
-	return shaderBlob;
-}
 
 //1.Textureデータを読む
 //DirectX::ScratchImage LoadTexture(const std::string& filePath)
@@ -334,6 +268,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	input->Initialize(winApp);
 	input->Update();
 
+	DirectXCommon* dxCommon = nullptr;
 
 	//=============================PSO===========================
 		//RootSignature作成
@@ -639,7 +574,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		} 
 		
 		//描画後処理
-		
+		dxCommon->PreDraw();
+		dxCommon->PostDraw();
 
 //		ImGui_ImplDX12_NewFrame();
 //		ImGui_ImplWin32_NewFrame();
@@ -678,24 +614,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 //		//ImGuiの内部コマンドを生成する
 //		ImGui::Render();
 //		
-//		//これから書き込むバックバッファのインデックスを取得
-//		UINT backBuffetIndex = swapChain->GetCurrentBackBufferIndex();
-//		//TransitionBarrierの設定
-//		D3D12_RESOURCE_BARRIER barrier{};
-//		//今回のバリアはTransitionF
-//		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-//		//Noneにしておく
-//		barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-//		//バリアを張る対象のリソース。現在のバックバッファに対して行う
-//		barrier.Transition.pResource = swapChainResources[backBuffetIndex];
-//		//遷移前(現在)のResourceState
-//		barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
-//		//遷移後のResourceState
-//		barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
-//
-//		//TransitionBarrierを張る
-//		commandList->ResourceBarrier(1, &barrier);		//TransitionBarrierを張る
-//		//commandList->ResourceBarrier(1, &barrier);
+//		
 //		//描画先のRTVを設定する
 //		commandList->OMSetRenderTargets(1, &rtvHandles[backBuffetIndex], false, nullptr);
 //		//指定した色で画面全体をクリアする
@@ -747,12 +666,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 //		//実際のcommandListのImGuiの描画コマンドを積む
 //		ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
 //
-//		//画面に描く処理はすべて終わり、画面に映すので、状態を遷移
-//		//今回はRenderTargetからPresentにする
-//		barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-//		barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
-//		//TransitionBarrierを振る
-//		commandList->ResourceBarrier(1, &barrier);
+//
 //
 //
 //
