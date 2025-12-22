@@ -1166,12 +1166,19 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		//Windowにメッセージが来てたら最優先で処理させる
 		if(winApp->ProcessMessage())
 		{
-			input->Update();
-			input->PushKey(DIK_SPACE);
-			input->TriggerKey(DIK_SPACE);
-
 			break;
-		} 
+		}
+
+		input->Update();
+		if (input->PushKey(DIK_SPACE))
+		{
+			OutputDebugStringA("Hit SPACE\n");
+		}
+
+		if (input->TriggerKey(DIK_SPACE))
+		{
+
+		}
 
 		ImGui_ImplDX12_NewFrame();
 		ImGui_ImplWin32_NewFrame();
