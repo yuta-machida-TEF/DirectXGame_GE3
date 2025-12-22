@@ -742,9 +742,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	input->Initialize(wc.hInstance,hwnd);
 	input->Update();
 
-	//入力解放
-	delete input;
-
 
 #ifdef _DEBUG//DEBUGはCreateWindowの直後
 
@@ -1528,6 +1525,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	ImGui_ImplWin32_Shutdown();
 	ImGui::DestroyContext();
 	
+	//入力解放
+	delete input;
 
 
 #ifdef _DEBUG
