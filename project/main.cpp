@@ -3,7 +3,6 @@
 #include<format>
 #include<d3d12.h>
 #include<dxgi1_6.h>
-#include<cassert>
 #include<dxgidebug.h>
 #include "externals/DirectXTex/DirectXTex.h"
 #include "Input.h"
@@ -740,7 +739,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//入力の初期化
 	input = new Input();
 	input->Initialize(wc.hInstance,hwnd);
-	input->Update();
+
 
 
 #ifdef _DEBUG//DEBUGはCreateWindowの直後
@@ -1081,29 +1080,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		IID_PPV_ARGS(&graphicsPipelineState));
 	assert(SUCCEEDED(hr));
 
-	
-
-
-	//Direct Input　初期化
-	IDirectInput8* directInput = nullptr;
-	hr = DirectInput8Create(
-		wc.hInstance, DIRECTINPUT_VERSION, IID_IDirectInput8,
-		(void**)&directInput, nullptr);
-	assert(SUCCEEDED(hr));
-
-	//キーボードデバイスの生成
-	IDirectInputDevice8* keyboard = nullptr;
-	hr = directInput->CreateDevice(GUID_SysKeyboard, &keyboard, NULL);
-	assert(SUCCEEDED(hr));
-
-	//入力データ形式のセット
-	hr = keyboard->SetDataFormat(&c_dfDIKeyboard);//標準形式
-	assert(SUCCEEDED(hr));
-
-	//排他制御レベルのセット
-	hr = keyboard->SetCooperativeLevel(
-		hwnd, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE | DISCL_NOWINKEY);
-	assert(SUCCEEDED(hr));
 
 	//モデル読み込み
 	ModelData modelData = LoadObjFile("resources", "plane.obj");
@@ -1118,42 +1094,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	materialResource->Map(0, nullptr, reinterpret_cast<void**>(&materialData));
 	//今回は赤を書き込んでみる
 	*materialData = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
-
-	////頂点バッファビューを作成する
-	//D3D12_VERTEX_BUFFER_VIEW vertexBufferView{};
-	////リソースの先頭のアドレスから使う
-	////vertexBufferView.BufferLocation = vertexResource->GetGPUVirtualAddress();
-	////使用するリソースのサイズは頂点3つ分のサイズ
-	//vertexBufferView.SizeInBytes = sizeof(VertexData) * 6;
-	////1頂点あたりのサイズ
-	//vertexBufferView.StrideInBytes = sizeof(VertexData);
-
-	////頂点リソースにデータを書き込む
-	//VertexData* vertexData = nullptr;
-	////書き込むためのアドレスを取得
-	//vertexResource->Map(0, nullptr,
-	//	reinterpret_cast<void**>(&vertexData));
-	////左下
-	//vertexData[0].position = { -0.5f,-0.5f ,0.0f ,1.0f };
-	//vertexData[0].texcoord = { 0.0f,1.0f };
-	////上
-	//vertexData[1].position = { 0.0f,0.5f ,0.0f ,1.0f };
-	//vertexData[1].texcoord = { 0.5f,0.0f };
-	////右下
-	//vertexData[2].position = { 0.5f,-0.5f ,0.0f ,1.0f };
-	//vertexData[2].texcoord = { 1.0f,1.0f };
-
-	////左下2
-	//vertexData[3].position = { -0.5f,-0.5f ,0.5f ,1.0f };
-	//vertexData[3].texcoord = { 0.0f,1.0f };
-	////上2
-	//vertexData[4].position = { 0.0f,0.0f ,0.0f ,1.0f };
-	//vertexData[4].texcoord = { 0.5f,0.0f };
-	////右下2
-	//vertexData[5].position = { 0.5f,-0.5f ,-0.5f ,1.0f };
-	//vertexData[5].texcoord = { 1.0f,1.0f };
-
-
 
 	//ビューボート
 	D3D12_VIEWPORT viewport{};
@@ -1294,8 +1234,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	vertexResource->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));//書き込むためのアドレスを取得
 	std::memcpy(vertexData, modelData.vertices.data(), sizeof(VertexData)* modelData.vertices.size());//頂点データをリソースにコピー
 
-	BYTE key[256]{};
-	BYTE preKey[256]{};
 
 	//ウィンドウのxボタンが押されるまでループ
 
@@ -1309,26 +1247,22 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			DispatchMessage(&msg);
 		} else
 		{
-			//キーボード
-			keyboard->Acquire();
-			//前frameの入力を保存
-			memcpy(preKey, key, 256);
-
-			//最新の入力を保存
-			keyboard->GetDeviceState(sizeof(key), key);
-			
-			/*ゲーム処理.
-			Log(std::format("enemyHP:{},textruePath:{}\n", enemyHp, text))*/
-
-			//数字のキーが押されていたら
-			if (key[DIK_SPACE]&& !preKey[DIK_SPACE])
+		
+			input->Update();
+			if (input->PushKey(DIK_SPACE))
 			{
-   				OutputDebugStringA("Hit SPACE\n");
+				OutputDebugStringA("Hit SPACE\n");
 			}
+			
+			if (input->TriggerKey(DIK_SPACE))
+			{
+				//OutputDebugStringA("Hit SPACE\n");
+			}
+   	
 
 		}
 		
-
+		 
 		ImGui_ImplDX12_NewFrame();
 		ImGui_ImplWin32_NewFrame();
 		ImGui::NewFrame();
@@ -1336,8 +1270,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		ImGui::Begin("Sprite");
 		ImGui::ColorEdit4("material", &materialData->x, ImGuiColorEditFlags_AlphaPreview);
-		//ImGui::DragFloat("rotate.y", &transform.rotate.y, 0.1f);
-		//ImGui::DragFloat3("transform", &transform.translate.x, 0.1f);
 		ImGui::DragFloat2("Sprite transform", &transformSprite.translate.x, 1.0f);
 		ImGui::End();
 

@@ -39,24 +39,12 @@ void Input::Update()
 
 bool Input::PushKey(BYTE keyNumber)
 {
-	//指定キーを押していればtrueを返す
-	if (key[keyNumber])
-	{
-		return true;
-	}
-
 	//そうでなければならない
-	return false;
+	return key[keyNumber] != 0;
 }
 
 bool Input::TriggerKey(BYTE keyNumber)
 {
-	//指定キーを押していればtrueを返す
-	if (key[keyNumber])
-	{
-		return true;
-	}
-
-	return false;
+	return (key[keyNumber] != 0 && keyPre[keyNumber] == 0);
 }
 
