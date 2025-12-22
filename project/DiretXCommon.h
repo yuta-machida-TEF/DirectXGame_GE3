@@ -31,8 +31,6 @@ public:
 		return commandList.Get();
 	}
 
-
-
 	//コマンドキュー
 	Microsoft::WRL::ComPtr<ID3D12CommandQueue> commandQueue;
 

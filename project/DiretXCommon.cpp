@@ -497,6 +497,14 @@ void DirectXCommon::commandIze()
 		IID_PPV_ARGS(&commandList));
 	assert(SUCCEEDED(hr));
 
+	//コマンドキュー、ウィンドウハンドル、設定を渡して生成する
+	hr = dxgiFactory->CreateSwapChainForHwnd(commandQueue,
+		winApp->GetHwnd(),
+		&swapChainDesc,
+		nullptr,
+		nullptr,
+		reinterpret_cast<IDXGISwapChain1**>(&swapChain));
+
 }
 
 void DirectXCommon::swapIze()
