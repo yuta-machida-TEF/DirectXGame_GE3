@@ -1,16 +1,11 @@
-#include<Windows.h>
 #include<string>
 #include<format>
 #include<d3d12.h>
 #include<dxgi1_6.h>
-#include<cassert>
 #include<dxgidebug.h>
 #include "externals/DirectXTex/DirectXTex.h"
 #include "Input.h"
-
 //DirectInputインクルード
-#define DIRECTINPUT_VERSION 0x0800
-#include <dinput.h>
 #pragma comment(lib,"d3d12.lib")
 #pragma comment(lib,"dxgi.lib")
 #include <dxcapi.h>
@@ -364,30 +359,6 @@ void Log(const std::string& message)
 	OutputDebugStringA(message.c_str());
 }
 
-//LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg,
-//	WPARAM wparam, LPARAM lparam) {
-//
-//	
-//	if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wparam, lparam))
-//	{
-//		return true;
-//	}
-//
-//	//メッセージに応じてゲーム固有の処理を行う
-//	switch (msg)
-//	{
-//	case WM_DESTROY:
-//
-//		//OSに対して、アプリの終了を伝える
-//		PostQuitMessage(0);
-//		return 0;
-//	}
-//
-//	//標準のメッセージ処理を行う
-//	return DefWindowProc(hwnd, msg, wparam, lparam);
-//
-//}
-
 //DepthStencilTextureを作る
 ID3D12Resource* CreateDepthStencilTextureResource(ID3D12Device* device, int32_t width, int32_t height)
 {
@@ -699,7 +670,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//入力の初期化
 	input = new Input();
 	input->Initialize(winApp);
-	input->Update();
 
 	
 
@@ -879,8 +849,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	//hr = device->CreateCommandQueue(&commandQueueDesc, IID_PPV_ARGS(&commandQueue));
 
-	// DepthStencilTextureをウィンドウのサイズで作成
-    //ID3D12Resource* depthStencilResource = CreateDepthStencilTextureResource(device, WinApp::kClientWidth, kClientHeight);
 
 	//dxcCompilerを初期化
 	IDxcUtils* dxcUtlis = nullptr;
@@ -1198,26 +1166,17 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		//Windowにメッセージが来てたら最優先で処理させる
 		if(winApp->ProcessMessage())
 		{
+			input->Update();
+			input->PushKey(DIK_SPACE);
+			input->TriggerKey(DIK_SPACE);
+
 			break;
 		} 
-		
 
 		ImGui_ImplDX12_NewFrame();
 		ImGui_ImplWin32_NewFrame();
 		ImGui::NewFrame();
 
-
-		ImGui::Begin("Sprite");
-		ImGui::ColorEdit4("material", &materialData->x, ImGuiColorEditFlags_AlphaPreview);
-		ImGui::DragFloat2("Sprite transform", &transformSprite.translate.x, 1.0f);
-		ImGui::End();
-
-		ImGui::Begin("Object");
-		ImGui::ColorEdit4("material", &materialData->x, ImGuiColorEditFlags_AlphaPreview);
-		ImGui::DragFloat("rotate.y", &transform.rotate.y, 0.1f);
-		ImGui::DragFloat3("transform", &transform.translate.x, 0.1f);
-		ImGui::End();
-		
 		Matrix4x4 worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
 		Matrix4x4 cameraMatrix = MakeAffineMatrix(cameraTransform.scale, cameraTransform.rotate, cameraTransform.translate);
 		Matrix4x4 viewMatrix = Inverse(cameraMatrix);
@@ -1263,11 +1222,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		float clearColor[] = { 0.1f,0.25f,0.5f,1.0f };
 		commandList->ClearRenderTargetView(rtvHandles[backBuffetIndex], clearColor, 0, nullptr);
 
-		//描画先のRTVとDSVを設定する
-		/*D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
-		commandList->OMSetRenderTargets(1, &rtvHandles[backBuffetIndex], false, &dsvHandle);*/
-
-
 		//描画用のDescriptorHeapの設定
 		ID3D12DescriptorHeap* descriptorHeaps[] = { srvDescriptorHeap };
 		commandList->SetDescriptorHeaps(1, descriptorHeaps);
@@ -1299,11 +1253,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		commandList->SetGraphicsRootConstantBufferView(1, transformtionMatrixResourceSprite->GetGPUVirtualAddress());
 		//インデックスを指定
 		commandList->IASetIndexBuffer(&indexBufferViewSprite);//IBVを設定
-		//描画! (DrawCall/ドローコール)
-		//commandList->DrawInstanced(6, 1, 0, 0);
-		//描画! (DrawCall/ドローコール)6個のインデックスを使用し1つのインタランスを描画。その他は当面で良い
-	    //commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
-
 
 		//実際のcommandListのImGuiの描画コマンドを積む
 		ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
@@ -1397,7 +1346,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 #ifdef _DEBUG
 	debugController->Release();
 #endif // _DEBUG
-	//CloseWindow(hwnd);
 
 	//警告時に止まる
 	//infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, true);
