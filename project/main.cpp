@@ -8,8 +8,6 @@
 #include "Input.h"
 
 //DirectInputインクルード
-#define DIRECTINPUT_VERSION 0x0800
-#include <dinput.h>
 #pragma comment(lib,"d3d12.lib")
 #pragma comment(lib,"dxgi.lib")
 #include <dxcapi.h>
