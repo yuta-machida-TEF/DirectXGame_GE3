@@ -2,139 +2,96 @@
 #include<d3d12.h>
 #include<dxgi1_6.h>
 #include<wrl.h>
-#include "WinApp.h"
+#include"WinApp.h"
+#include<Windows.h>
+#include "externals/imgui/imgui.h"
+#include "externals/imgui/imgui_impl_dx12.h"
+#include "externals/imgui/imgui_impl_win32.h"
+#include<format>
+#include <dxcapi.h>
+#include<cassert>
+#include<array>
 #include"logger.h"
 #include"StringUtility.h"
-#include<array>
-#include <dxcapi.h>
-#include <string>
-#include "externals/DirectXTex-mar2023/DirectXTex/DirectXTex.h"
-#include <chrono>
+
 
 //DirectX基盤
 class DirectXCommon
 {
-
 public:
+	void Initialize(WinApp *winApp);
 
-	HRESULT hr;
-
-	ID3D12Resource* CreateBufferResource(ID3D12Device* device, size_t sizeInBytes);
-	ID3D12DescriptorHeap* CreateDescriptorHeap(ID3D12Device* device, D3D12_DESCRIPTOR_HEAP_TYPE DescHeap, UINT DESCRIPTOR, bool createShader);
-	ID3D12Resource* CreateDepthStencilTextureResource(ID3D12Device* device, int32_t width, int32_t height);
-
-
-	ID3D12Device* GetDxDevice()const { return device.Get(); }
-
-	ID3D12GraphicsCommandList* GetCommandList()
-	{
-		return commandList.Get();
-	}
-
-	//コマンドキュー
-	Microsoft::WRL::ComPtr<ID3D12CommandQueue> commandQueue;
-
-
-	//スワップチェーン
-	//スワップチェーン
-	Microsoft::WRL::ComPtr<IDXGISwapChain4> swapChain;
-
-	DXGI_SWAP_CHAIN_DESC1 swapChainDesc{};
-
-	//フェンス
-	ID3D12Fence* fence = nullptr;
-	//rtv
-	D3D12_RENDER_TARGET_VIEW_DESC rtvDesc{};
-
-	//RTVを2つ作るのでディスクリプタを2つ用意
-	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandles[2];
-
-	//RTV Heap
-	ID3D12DescriptorHeap* rtvDescriptorHeap = nullptr;
-	//SRV Heap
-	ID3D12DescriptorHeap* srvDescriptorHeap = nullptr;
-	//DSV Heap
-	ID3D12DescriptorHeap* dsvDescriptorHeap = nullptr;
-
-
-	Microsoft::WRL::ComPtr<ID3D12Resource>CreateTextureResource(const DirectX::TexMetadata& metadata);
-
-	Microsoft::WRL::ComPtr<ID3D12Resource>UploadTextureData(Microsoft::WRL::ComPtr<ID3D12Resource> texture, const DirectX::ScratchImage& mipImages);
-
-	static DirectX::ScratchImage LoadTexture(const std::string& filePath);
-
-
-	//初期化
-	void Initialize();
-	void Device();
-	void commandIze();//コマンド関連の初期化
-	void swapIze();//スワップチェーンの生成
-	void depthIze(ID3D12Device* device, int32_t width, int32_t height);//深度バッファの生成
-	void DescriptorIze();//各種デスクリプタヒープの生成
-	void RenderIze();//レンダーターゲットビューの初期化
-	void viewRectangle();//ビューポート短形
-	void ShortRectangle();//シザリング短形
-	void dxcCommon();//DXCコンパイラの生成
-	void ImguiIze(ID3D12Device* device);//IMGuiの初期化
-	
-	void CreateRTV();
-	
-
-
-	//スワップチェーンリソース
-	std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, 2>swapChainResources;
-
-	//SRVの指定番号のCPUデスクリプタハンドルを取得する
-	D3D12_CPU_DESCRIPTOR_HANDLE GetSRVCPUDescriptorHandle(uint32_t index);
-
-	//SRVの指定番号のGPUデスクリプタハンドルを取得する
-	D3D12_CPU_DESCRIPTOR_HANDLE GetSRVGPUDescriptorHandle(uint32_t index);
+	void CreateDrive();//デバイスの生成
+	void CreateCommand();//コマンド関連の生成
+	void CreateSwapChan();//スワップチェーンの生成
+	void CreateDepth();//深度バッファの生成
+	void CreateDescriptorHeapRTV();//各種デスクリプタヒープの生成
+	void CreateHeapType();//レンダーターゲットビューの初期化
+	void CreateFence();//深度ステンシルビューの初期化
+	void CreateView();//ビューポート短形の生成
+	void CreateScissor();//シンリング短形の生成
+	void CreateDXC();//DXCコンパイラの生成
+	void CreateImGui();//ImGuiの初期化
 
 	//描画前処理
 	void PreDraw();
 	//描画後処理
 	void PostDraw();
 	
-private:
+
+
+	//コマンド関連の初期化
+	Microsoft::WRL::ComPtr<ID3D12CommandQueue>commandQueue;
+	Microsoft::WRL::ComPtr<ID3D12CommandAllocator>commandAllocator;
+	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>commandList;
+
+	DXGI_SWAP_CHAIN_DESC1 swapChainDesc{};
+	//スワップチェーンの初期化
+	Microsoft::WRL::ComPtr<IDXGISwapChain4> swapChain;
+	//各種デスクリプタヒープの初期化
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>rtvDescriptorHeap;
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>srvDescriptorHeap;
 	//DirectX12デバイス
-	Microsoft::WRL::ComPtr<ID3D12Device> device;
-	//DXGIファクトリ
-	Microsoft::WRL::ComPtr<IDXGIFactory7>dxgiFactory;
+	Microsoft::WRL::ComPtr<ID3D12Device>device;
+	// SRV用デスクリプタサイズ
+	UINT descriptorSizeSRV = 0;
+	//フェンス値
+	UINT64 fenceVal = 0;
 
-	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>CreateDescriptorHeap
-	(
-		D3D12_DESCRIPTOR_HEAP_TYPE descriptorHeap, 
-		UINT Descriptors, 
-		bool HeapShader);
-
-	//コマンドアロケータ
-	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> commandAllocator;
-
-	//コマンドリスト
-	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList;
-
-	Microsoft::WRL::ComPtr<ID3D12Resource> CreateBufferResource(size_t sizeInBytes);
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> dsvDescriptorHeap;
 
 
-	//WindowsAPI
-	WinApp* winApp = nullptr;
-
-	//指定番号のCPUデスクリプタハンドルを取得する
-	static D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescriptorHandle(const Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>& descriptorHeap,
+	// 指定番号のCPUデスクリプタハンドルを取得する
+	static D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescriptorHandle(
+		const Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>& descriptorHeap,
+		uint32_t descriptorSize, uint32_t index);
+	// 指定番号のGPUデスクリプタハンドルを取得する
+	static D3D12_GPU_DESCRIPTOR_HANDLE GetGPUDescriptorHandle(
+		const Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>& descriptorHeap,
 		uint32_t descriptorSize, uint32_t index);
 
-	//TransitionBarrier
-	static D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescriptorHandle(Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> descriptorHeap, uint32_t descriptorSize, uint32_t index);
-
-	static D3D12_GPU_DESCRIPTOR_HANDLE GetGPUDescriptorHandle(Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> descriptorHeap, uint32_t descriptorSize, uint32_t index);
-
-	D3D12_RESOURCE_BARRIER barrier{};
+	//スワップチェーンリソース
+	Microsoft::WRL::ComPtr<ID3D12Resource>swapChainResources[2];
 
 private:
 
-	void CreateDescriptorHeap();
-	void RenderTargetView();
-	void DepthStencilView();
-	void ViewPort();
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>
+		CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE heapType, UINT numDescriptors,
+			bool shaderVisible);
+
+	Microsoft::WRL::ComPtr<ID3D12Fence>fence;
+	HANDLE fenceEvent = nullptr;
+
+	//ビューポート
+	D3D12_VIEWPORT viewport{};
+	//シザリング短形
+	D3D12_RECT scissorRect{};
+
+
+	//DXGIファクトリ
+	Microsoft::WRL::ComPtr<IDXGIFactory7> dxgiFactory;
+	//WindowsAPI
+	WinApp* winApp = nullptr;
+	std::array<D3D12_CPU_DESCRIPTOR_HANDLE, 2>rtvHandles{};
 
 };
