@@ -2,7 +2,6 @@
 #include "DiretXCommon.h"
 #pragma comment(lib,"d3d12.lib")
 #pragma comment(lib,"dxgi.lib")
-#include<wrl.h>
 #include<cassert>
 
 using namespace Microsoft::WRL;
@@ -14,17 +13,17 @@ void DirectXCommon::Initialize(WinApp* winApp)
 	//メンバ変数に記録
 	this->winApp = winApp;
 
-	void CreateDrive();
-	void CreateCommand();
-	void CreateSwapChan();
-	void CreateDepth();
-	void CreateDescriptorHeapRTV();
-	void CreateHeapType();
-	void CreateFence();
-	void CreateView();
-	void CreateScissor();
-	void CreateDXC();
-	void CreateImGui();
+	CreateDrive();
+	CreateCommand();
+	CreateSwapChan();
+	CreateDepth();
+	CreateDescriptorHeapRTV();
+	CreateHeapType();
+	CreateFence();
+	CreateView();
+	CreateScissor();
+	CreateDXC();
+	CreateImGui();
 
 }
 
@@ -37,6 +36,7 @@ void DirectXCommon::CreateDrive()
 	//メインスレッドではMTAでCOM利用
 	hr = CoInitializeEx(0, COINIT_MULTITHREADED);
 	hr = CreateDXGIFactory(IID_PPV_ARGS(&dxgiFactory));
+	assert(SUCCEEDED(hr));
 
 	//使用するアダブタ用の変数。最初にnullptrを入れておく
 	IDXGIAdapter4* useAdapter = nullptr;
@@ -52,7 +52,6 @@ void DirectXCommon::CreateDrive()
 		//ソフトウェアアダブタでなければ採用!
 		if (!(adapterDesc.Flags & DXGI_ADAPTER_FLAG3_SOFTWARE))
 		{
-
 			break;
 		}
 		useAdapter = nullptr;
@@ -60,7 +59,7 @@ void DirectXCommon::CreateDrive()
 	//適切なアダブタが見つからなかったので起動できない
 	assert(useAdapter != nullptr);
 
-	ID3D12Device* device = nullptr;
+	//ID3D12Device* device = nullptr;
 	//機能レベルとログ出力用の文字列
 	D3D_FEATURE_LEVEL featrueLevels[] = {
 		D3D_FEATURE_LEVEL_12_2,D3D_FEATURE_LEVEL_12_1,D3D_FEATURE_LEVEL_12_0
@@ -69,7 +68,7 @@ void DirectXCommon::CreateDrive()
 	//高い順に生成できるか試していく
 	for (size_t i = 0; i < _countof(featrueLevels); i++)
 	{
-		hr = D3D12CreateDevice(useAdapter, featrueLevels[i], IID_PPV_ARGS(&device));
+		hr = D3D12CreateDevice(useAdapter, featrueLevels[i], IID_PPV_ARGS(device.GetAddressOf()));
 		//指定した機能レベルでデバイスが生成できたかを確認
 		if (SUCCEEDED(hr))
 		{
@@ -88,15 +87,18 @@ void DirectXCommon::CreateCommand()
 	HRESULT hr;
 
 	D3D12_COMMAND_QUEUE_DESC commandQueueDesc{};
-	hr = device->CreateCommandQueue(&commandQueueDesc, IID_PPV_ARGS(&commandQueue));
+	commandQueueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
+	commandQueueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
+
+	hr = device->CreateCommandQueue(&commandQueueDesc, IID_PPV_ARGS(commandQueue.GetAddressOf()));
 	//コマンドキューの生成がうまくいかなかったので起動できない
 	assert(SUCCEEDED(hr));
 
-	hr = device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&commandAllocator));
+	hr = device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(commandAllocator.GetAddressOf()));
 	assert(SUCCEEDED(hr));
 
 	hr = device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, commandAllocator.Get(), nullptr,
-		IID_PPV_ARGS(&commandList));
+		IID_PPV_ARGS(commandList.GetAddressOf()));
 	assert(SUCCEEDED(hr));
 
 }
@@ -113,6 +115,11 @@ void DirectXCommon::CreateSwapChan()
 	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	swapChainDesc.BufferCount = 2;
 	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+	
+	hr = CreateDXGIFactory(IID_PPV_ARGS(&dxgiFactory));
+	assert(SUCCEEDED(hr));
+	
+
 	//コマンドキュー、ウィンドウハンドル、設定を渡して生成する
 	hr = dxgiFactory->CreateSwapChainForHwnd(commandQueue.Get(),
 		winApp->GetHwnd(),
@@ -212,9 +219,11 @@ void DirectXCommon::CreateHeapType()
 	rtvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
 	rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
 
+	//SRV
 	D3D12_CPU_DESCRIPTOR_HANDLE textureSrvHandleCPU =
 		srvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
 
+	//RTV
 	D3D12_CPU_DESCRIPTOR_HANDLE rtvCPU =
 		rtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
 
@@ -224,7 +233,7 @@ void DirectXCommon::CreateHeapType()
 
 	// 　裏表の2つ文
 	for (uint32_t i = 0; i < 2; ++i) {
-		D3D12_CPU_DESCRIPTOR_HANDLE CPUHandle = textureSrvHandleCPU;
+		D3D12_CPU_DESCRIPTOR_HANDLE CPUHandle = rtvCPU;
 		CPUHandle.ptr += RTVSize * i;
 
 		device->CreateRenderTargetView(swapChainResources[i].Get(), &rtvDesc, CPUHandle);

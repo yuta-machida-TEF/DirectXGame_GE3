@@ -33,6 +33,8 @@ public:
 	void CreateDXC();//DXCコンパイラの生成
 	void CreateImGui();//ImGuiの初期化
 
+	DXGI_SWAP_CHAIN_DESC1 swapChainDesc{};
+
 	//描画前処理
 	void PreDraw();
 	//描画後処理
@@ -45,7 +47,6 @@ public:
 	Microsoft::WRL::ComPtr<ID3D12CommandAllocator>commandAllocator;
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>commandList;
 
-	DXGI_SWAP_CHAIN_DESC1 swapChainDesc{};
 	//スワップチェーンの初期化
 	Microsoft::WRL::ComPtr<IDXGISwapChain4> swapChain;
 	//各種デスクリプタヒープの初期化
