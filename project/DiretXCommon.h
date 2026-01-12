@@ -74,6 +74,20 @@ public:
 	//スワップチェーンリソース
 	Microsoft::WRL::ComPtr<ID3D12Resource>swapChainResources[2];
 
+	//getter
+	ID3D12Device* GetDevice() const { return device.Get(); }
+	ID3D12GraphicsCommandList* GetCommandList()const { return commandList.Get(); }
+
+	//シェーダーのコンパイル
+	Microsoft::WRL::ComPtr<IDxcBlob>CompileShader(
+		const std::wstring& filePath, const wchar_t* profile);
+
+	//バッファリソースの生成
+	Microsoft::WRL::ComPtr<ID3D12Resource>CreateBufferResource(size_t sizeInBytes);
+
+	//テクスチャリソースの生成
+	Microsoft::WRL::ComPtr<ID3D12Resource> CreateTextureResource(const DirectX::Tex)
+
 private:
 
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>

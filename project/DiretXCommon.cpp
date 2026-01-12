@@ -266,6 +266,45 @@ DirectXCommon::GetGPUDescriptorHandle(
 	return handle;
 }
 
+Microsoft::WRL::ComPtr<IDxcBlob> DirectXCommon::CompileShader(const std::wstring& filePath, const wchar_t* profile)
+{
+	
+	//1,hlslファイルを読む
+	//Log(ConverString(std::format(L"Resources/shader/Begin CompileShader,path:{},profile:{}\n", filePath, profile)));
+	//hlslファイルを読む
+	IDxcBlobEncoding* shaderSource = nullptr;
+	//HRESULT hr = dxcUtils->LoadFile(filePath.c_str(), nullptr, &shaderSource);
+	//読めなかったら止める
+	//assert(SUCCEEDED(hr));
+	//読み込んだファイルの内容を設定する
+	DxcBuffer shaderSourceBuffer;
+	shaderSourceBuffer.Ptr = shaderSource->GetBufferPointer();
+	shaderSourceBuffer.Size = shaderSource->GetBufferSize();
+	shaderSourceBuffer.Encoding = DXC_CP_UTF8;//UTFT8の文字コードであることを通知
+	//2.Compileする
+	LPCWSTR arguments[] = {
+		 filePath.c_str(),//コンパイル対象のhlslファイル名
+		 L"-E",L"main",//エントリーポイントの指定。基本的にmain以外にはしない
+		 L"-T",profile,//ShaderProfileの設定
+		 L"-Zi",L"-Qembed_debug",//デバック用の情報を埋め込む
+		 L"-Od",//最適化を外しておく
+		 L"-Zpr",//メモリレイアウトは行優先
+	};
+	//実際にShaderをコンパイルする
+	IDxcResult* shaderResult = nullptr;
+	//hr = dxcComppiler->Compile(
+	//	&shaderSourceBuffer,//読み込んだファイル
+	//	arguments,//コンパイルオプション
+	//	_countof(arguments),//コンパイルオプションの数
+	//	includeHandler,//includeが含まれた諸々
+	//	IID_PPV_ARGS(&shaderResult)
+	//);
+	//コンパイルエラーではなくdxcが起動できないなど致命的な状況
+	//assert(SUCCEEDED(hr));
+
+	return Microsoft::WRL::ComPtr<IDxcBlob>();
+}
+
 Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> DirectXCommon::CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE heapType, UINT numDescriptors, bool shaderVisible)
 {
 	ID3D12DescriptorHeap* CreateDescriptorHeap(
