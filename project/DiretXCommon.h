@@ -1,3 +1,4 @@
+
 #pragma once
 #include<d3d12.h>
 #include<dxgi1_6.h>
@@ -19,7 +20,7 @@
 class DirectXCommon
 {
 public:
-	void Initialize(WinApp *winApp);
+	void Initialize(WinApp* winApp);
 
 	void CreateDrive();//デバイスの生成
 	void CreateCommand();//コマンド関連の生成
@@ -39,7 +40,7 @@ public:
 	void PreDraw();
 	//描画後処理
 	void PostDraw();
-	
+
 
 
 	//コマンド関連の初期化
@@ -73,20 +74,6 @@ public:
 
 	//スワップチェーンリソース
 	Microsoft::WRL::ComPtr<ID3D12Resource>swapChainResources[2];
-
-	//getter
-	ID3D12Device* GetDevice() const { return device.Get(); }
-	ID3D12GraphicsCommandList* GetCommandList()const { return commandList.Get(); }
-
-	//シェーダーのコンパイル
-	Microsoft::WRL::ComPtr<IDxcBlob>CompileShader(
-		const std::wstring& filePath, const wchar_t* profile);
-
-	//バッファリソースの生成
-	Microsoft::WRL::ComPtr<ID3D12Resource>CreateBufferResource(size_t sizeInBytes);
-
-	//テクスチャリソースの生成
-	Microsoft::WRL::ComPtr<ID3D12Resource> CreateTextureResource(const DirectX::Tex)
 
 private:
 
