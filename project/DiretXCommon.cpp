@@ -362,6 +362,200 @@ void DirectXCommon::CreateImGui()
 
 }
 
+Microsoft::WRL::ComPtr<IDxcBlob> DirectXCommon::CompileShader(const std::wstring& filePath, const wchar_t* profile)
+{
+		//1,hlslファイルを読む
+	//Log(ConverString(std::format(L"Resources/shader/Begin CompileShader,path:{},profile:{}\n", filePath, profile)));
+	//hlslファイルを読む
+	IDxcBlobEncoding* shaderSource = nullptr;
+	//HRESULT hr = dxcUtils->LoadFile(filePath.c_str(), nullptr, &shaderSource);
+	//読めなかったら止める
+	//assert(SUCCEEDED(hr));
+	//読み込んだファイルの内容を設定する
+	DxcBuffer shaderSourceBuffer;
+	shaderSourceBuffer.Ptr = shaderSource->GetBufferPointer();
+	shaderSourceBuffer.Size = shaderSource->GetBufferSize();
+	shaderSourceBuffer.Encoding = DXC_CP_UTF8;//UTFT8の文字コードであることを通知
+	//2.Compileする
+	LPCWSTR arguments[] = {
+		 filePath.c_str(),//コンパイル対象のhlslファイル名
+		 L"-E",L"main",//エントリーポイントの指定。基本的にmain以外にはしない
+		 L"-T",profile,//ShaderProfileの設定
+		 L"-Zi",L"-Qembed_debug",//デバック用の情報を埋め込む
+		 L"-Od",//最適化を外しておく
+		 L"-Zpr",//メモリレイアウトは行優先
+	};
+	//実際にShaderをコンパイルする
+	IDxcResult* shaderResult = nullptr;
+	//hr = dxcComppiler->Compile(
+	//	&shaderSourceBuffer,//読み込んだファイル
+	//	arguments,//コンパイルオプション
+	//	_countof(arguments),//コンパイルオプションの数
+	//	includeHandler,//includeが含まれた諸々
+	//	IID_PPV_ARGS(&shaderResult)
+	//);
+	////コンパイルエラーではなくdxcが起動できないなど致命的な状況
+	//assert(SUCCEEDED(hr));
+
+	//3.警告・エラーがでていないか確認する
+	IDxcBlobUtf8* shaderError = nullptr;
+	//shaderResult->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(&shaderError), nullptr);
+	//if (shaderError != nullptr && shaderError->GetStringLength() != 0)
+	//{
+	//	Log(shaderError->GetStringPointer());
+	//	//警告・エラーダメゼッタイ
+	//	assert(false);
+
+	//}
+
+	//4.Compile結果を受け取って返す
+	IDxcBlob* shaderBlob = nullptr;
+	//hr = shaderResult->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(&shaderBlob), nullptr);
+	//assert(SUCCEEDED(hr));
+	////成功したログを出す
+	//Log(ConverString(std::format(L"Resources/shader/Compile Succeeded,path:{},profile:{}\n", filePath, profile)));
+	//もう使わないリソースを解放
+	shaderSource->Release();
+	shaderResult->Release();
+	//実行用のパイナリを返却
+	return shaderBlob;
+}
+
+Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateBufferResource(size_t sizeInBytes)
+{
+	//頂点バッファビューを作成する
+	D3D12_HEAP_PROPERTIES uploadHeapProperties{};
+	uploadHeapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;//UploadHeapを使う
+	//頂点リーソスの設定
+	D3D12_RESOURCE_DESC vertexResourceDesc{};
+	//バッファリーソス。テクスチャの場合はまた別の設定をする
+	vertexResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+	vertexResourceDesc.Width = sizeInBytes;//リーソスのサイズ。こんかいはVector4を3頂点分
+	//バッファの場合はこれらは1にする決まり
+	vertexResourceDesc.Height = 1;
+	vertexResourceDesc.DepthOrArraySize = 1;
+	vertexResourceDesc.MipLevels = 1;
+	vertexResourceDesc.SampleDesc.Count = 1;
+	//バッファの場合はこれにする決まり
+	vertexResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+	ID3D12Resource* CreateBufferResource(ID3D12Device * device, size_t sizeInBytes);
+	//実際に頂点リソースを作る
+	ID3D12Resource* vertexResource = nullptr;
+	HRESULT hr = device->CreateCommittedResource(&uploadHeapProperties, D3D12_HEAP_FLAG_NONE,
+		&vertexResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
+		IID_PPV_ARGS(&vertexResource));
+	assert(SUCCEEDED(hr));
+
+	return vertexResource;
+}
+
+Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateTextrueResource(const DirectX::TexMetadata& metadata)
+{
+	return Microsoft::WRL::ComPtr<ID3D12Resource>();
+}
+
+void DirectXCommon::UploadTextureData(const Microsoft::WRL::ComPtr<ID3D12Resource>& texture, const DirectX::ScratchImage& mipImages)
+{
+	//Meta情報を取得
+	const DirectX::TexMetadata& metadata = mipImages.GetMetadata();
+	//全MipMapについて
+	for (size_t mipLevel = 0; mipLevel < metadata.mipLevels; mipLevel++)
+	{
+		//MipMapLevelを指定して各Imageを取得
+		const DirectX::Image* img = mipImages.GetImage(mipLevel, 0, 0);
+		//Textureに転送
+		HRESULT hr = texture->WriteToSubresource(
+			UINT(mipLevel),
+			nullptr,//全領域へコピー
+			img->pixels,//元データアドレス
+			UINT(img->rowPitch),//1ラインサイズ
+			UINT(img->slicePitch)//1枚サイズ
+		);
+		assert(SUCCEEDED(hr));
+	}
+}
+
+DirectX::ScratchImage DirectXCommon::LoadTexture(const std::string& filePath)
+{
+	//1.中で必要となる変数の宣言
+	ModelData modelData;//構築するModelData
+	std::vector<Vector4> positions;//位置
+	std::vector<Vector3> normals;//法線
+	std::vector<Vector2> texcoords;//テクスチャ座標
+	std::string line;//ファイルから読んだ1行を格納するもの
+	//2.ファイルを開く
+	std::ifstream file(directoryPath + "/" + filename);//ファイルを開く
+	assert(file.is_open());//とりあえず開けなかったら止める
+	//3.実際にファイルを読み、MOdelDataを構築していく
+	while (std::getline(file, line))
+	{
+		std::string identifier;
+		std::istringstream s(line);
+		s >> identifier;//先頭の識別子を読む
+
+		//identifierに応じた処理
+		if (identifier == "v")
+		{
+			Vector4 position;
+			s >> position.x >> position.y >> position.z;
+			position.w = 1.0f;
+			positions.push_back(position);
+		} else if (identifier == "vt")
+		{
+			Vector2 texcoord;
+			s >> texcoord.x >> texcoord.y;
+			texcoords.push_back(texcoord);
+		} else if (identifier == "vn")
+		{
+			Vector3 normal;
+			s >> normal.x >> normal.y >> normal.z;
+			normals.push_back(normal);
+		} else if (identifier == "f")
+		{
+			VertexData triangle[3];
+			//面は三角形限定。その他は未対応
+			for (int32_t faceVertex = 0; faceVertex < 3; faceVertex++)
+			{
+				std::string vertexDefinition;
+				s >> vertexDefinition;
+				//頂点の要素へのIndexは「位置/UV/法線」で格納されているので、分解してIndexを取得する
+				std::istringstream v(vertexDefinition);
+				uint32_t elementIndices[3];
+				for (int32_t element = 0; element < 3; element++)
+				{
+					std::string index;
+					std::getline(v, index, '/');//区切りでインデックスを読んでいく
+					elementIndices[element] = std::stoi(index);
+				}
+				//要素へのIndexから,実際の要素の値を取得して、頂点を構築する
+				Vector4 position = positions[elementIndices[0] - 1];
+				position.x *= 1.0f;
+				Vector2 texcoord = texcoords[elementIndices[1] - 1];
+				texcoord.y = 1.0f - texcoord.y;
+				Vector3 normal = normals[elementIndices[2] - 1];
+				//normal.x *= 1.0f;
+			/*	VertexData vertex = { position, texcoord };
+				modelData.vertices.push_back(vertex);*/
+				triangle[faceVertex] = { position,texcoord };
+			}
+			//頂点を逆順で登録することで、回り順を逆にする
+			modelData.vertices.push_back(triangle[2]);
+			modelData.vertices.push_back(triangle[1]);
+			modelData.vertices.push_back(triangle[0]);
+		} else if (identifier == "mtllib")
+		{
+			//materialTemplateLibararyファイルの名前を取得する
+			std::string materialFilename;
+			s >> materialFilename;
+			//基本的にobjファイルと同一階層にmtlは存在させるので、ディレクトリ名とファイル名を渡す
+			modelData.material = LoagMaterialTemplateFile(directoryPath, materialFilename);
+		}
+	}
+	//4.ModelDataを返す
+	return modelData;
+}
+
+
 void DirectXCommon::PreDraw()
 {
 	// バックバッファの番号取得
