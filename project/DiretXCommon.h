@@ -19,6 +19,44 @@
 #include"StringUtility.h"
 #pragma comment(lib, "dxcompiler.lib")
 
+struct Vector4
+{
+	float x;
+	float y;
+	float z;
+	float w;
+};
+
+struct Vector3 {
+	float x;
+	float y;
+	float z;
+};
+
+struct Vector2
+{
+	float x;
+	float y;
+};
+
+struct VertexData
+{
+	Vector4 position;
+	Vector2 texcoord;
+};
+
+struct MaterialData
+{
+	std::string textrueFilePath;
+};
+
+struct ModelData
+{
+	std::vector<VertexData>vertices;
+	MaterialData material;
+};
+
+
 //DirectX基盤
 class DirectXCommon
 {
@@ -98,6 +136,28 @@ public:
 	//テクスチャファイルの読み込み
 	static DirectX::ScratchImage LoadTexture(const std::string& filePath);
 
+	ModelData LoadObjFile(const std::string& directoryPath,
+		const std::string& filename);
+
+	MaterialData LoagMaterialTemplateFile(const std::string& directoryPath,
+		                                  const std::string& filename);
+
+	UINT GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE heapType) const;
+
+	void CreateShaderResourceView(
+		ID3D12Resource* resource,
+		const D3D12_SHADER_RESOURCE_VIEW_DESC* srvDesc,
+		D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle
+	);
+
+	ID3D12RootSignature* CreateRootSignature(
+		const D3D12_ROOT_SIGNATURE_DESC& desc
+	);
+
+	ID3D12GraphicsCommandList* GetCommandList() const {
+		return commandList.Get();
+	}
+
 private:
 
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>
@@ -112,17 +172,18 @@ private:
 	//シザリング短形
 	D3D12_RECT scissorRect{};
 
-
 	//DXGIファクトリ
 	Microsoft::WRL::ComPtr<IDXGIFactory7> dxgiFactory;
 	//WindowsAPI
 	WinApp* winApp = nullptr;
 	std::array<D3D12_CPU_DESCRIPTOR_HANDLE, 2>rtvHandles{};
 
+
 	Microsoft::WRL::ComPtr<IDxcUtils> dxcUtils_;
 	Microsoft::WRL::ComPtr<IDxcCompiler3> dxcCompiler_;
-	Microsoft::WRL::ComPtr<IDxcIncludeHandler> includeHandler_;
 
 	Microsoft::WRL::ComPtr<ID3D12Device> device_;
+	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList_;
+	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> commandAllocator_;
 
 };

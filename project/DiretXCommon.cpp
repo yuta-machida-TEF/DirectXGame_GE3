@@ -29,6 +29,51 @@ void DirectXCommon::Initialize(WinApp* winApp)
 	CreateDXC();
 	CreateImGui();
 
+	HRESULT hr;
+
+	// dxcUtils を生成
+	hr = DxcCreateInstance(
+		CLSID_DxcUtils,
+		IID_PPV_ARGS(&dxcUtils_)
+	);
+	assert(SUCCEEDED(hr));
+
+	// dxcCompiler を生成
+	hr = DxcCreateInstance(
+		CLSID_DxcCompiler,
+		IID_PPV_ARGS(&dxcCompiler_)
+	);
+	assert(SUCCEEDED(hr));
+
+
+	//// CommandQueue
+	//D3D12_COMMAND_QUEUE_DESC queueDesc{};
+	//hr = device_->CreateCommandQueue(
+	//	&queueDesc,
+	//	IID_PPV_ARGS(&commandQueue_)
+	//);
+	//assert(SUCCEEDED(hr));
+
+	// CommandAllocator
+	hr = device_->CreateCommandAllocator(
+		D3D12_COMMAND_LIST_TYPE_DIRECT,
+		IID_PPV_ARGS(&commandAllocator_)
+	);
+	assert(SUCCEEDED(hr));
+
+	// CommandList
+	hr = device_->CreateCommandList(
+		0,
+		D3D12_COMMAND_LIST_TYPE_DIRECT,
+		commandAllocator_.Get(),
+		nullptr,
+		IID_PPV_ARGS(&commandList_)
+	);
+	assert(SUCCEEDED(hr));
+
+	// 最初は Close しておく（超重要）
+	commandList_->Close();
+
 }
 
 void DirectXCommon::CreateDrive()
@@ -371,68 +416,69 @@ void DirectXCommon::CreateImGui()
 Microsoft::WRL::ComPtr<IDxcBlob> DirectXCommon::CompileShader(const std::wstring& filePath, const wchar_t* profile)
 {
 
-		//1,hlslファイルを読む
-	Log(ConverString(std::format(L"Resources/shader/Begin CompileShader,path:{},profile:{}\n", filePath, profile)));
-	//hlslファイルを読む
-	IDxcBlobEncoding* shaderSource = nullptr;
-	HRESULT hr = dxcUtils_->LoadFile(filePath.c_str(), nullptr, &shaderSource);
-	//読めなかったら止める
-	assert(SUCCEEDED(hr));
-	//読み込んだファイルの内容を設定する
-	DxcBuffer shaderSourceBuffer;
-	shaderSourceBuffer.Ptr = shaderSource->GetBufferPointer();
-	shaderSourceBuffer.Size = shaderSource->GetBufferSize();
-	shaderSourceBuffer.Encoding = DXC_CP_UTF8;//UTFT8の文字コードであることを通知
-	//2.Compileする
-	LPCWSTR arguments[] = {
-		 filePath.c_str(),//コンパイル対象のhlslファイル名
-		 L"-E",L"main",//エントリーポイントの指定。基本的にmain以外にはしない
-		 L"-T",profile,//ShaderProfileの設定
-		 L"-Zi",L"-Qembed_debug",//デバック用の情報を埋め込む
-		 L"-Od",//最適化を外しておく
-		 L"-Zpr",//メモリレイアウトは行優先
-	};
-	//実際にShaderをコンパイルする
-	IDxcResult* shaderResult = nullptr;
-	hr = dxcCompiler_->Compile(
-		&shaderSourceBuffer,//読み込んだファイル
-		arguments,//コンパイルオプション
-		_countof(arguments),//コンパイルオプションの数
-		includeHandler_.Get(),//includeが含まれた諸々
-		IID_PPV_ARGS(&shaderResult)
-	);
-	//コンパイルエラーではなくdxcが起動できないなど致命的な状況
-	assert(SUCCEEDED(hr));
-
-	//3.警告・エラーがでていないか確認する
-	IDxcBlobUtf8* shaderError = nullptr;
-	shaderResult->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(&shaderError), nullptr);
-	if (shaderError != nullptr && shaderError->GetStringLength() != 0)
-	{
-		Log(shaderError->GetStringPointer());
-		//警告・エラーダメゼッタイ
-		assert(false);
-
-	}
-
-	//4.Compile結果を受け取って返す
-	IDxcBlob* shaderBlob = nullptr;
-	hr = shaderResult->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(&shaderBlob), nullptr);
-	assert(SUCCEEDED(hr));
-	//成功したログを出す
-	Log(ConverString(std::format(L"Resources/shader/Compile Succeeded,path:{},profile:{}\n", filePath, profile)));
-	//もう使わないリソースを解放
-	shaderSource->Release();
-	shaderResult->Release();
-	//実行用のパイナリを返却
-	return shaderBlob;
+    	//1,hlslファイルを読む
+    Log(ConverString(std::format(L"Resources/shader/Begin CompileShader,path:{},profile:{}\n", filePath, profile)));
+    //hlslファイルを読む
+    IDxcBlobEncoding* shaderSource = nullptr;
+    HRESULT hr =dxcUtils_->LoadFile(filePath.c_str(), nullptr, &shaderSource);
+	Microsoft::WRL::ComPtr<IDxcIncludeHandler> includeHandler_;
+	hr = dxcUtils_->CreateDefaultIncludeHandler(&includeHandler_);
+    //読めなかったら止める
+    assert(SUCCEEDED(hr));
+    //読み込んだファイルの内容を設定する
+    DxcBuffer shaderSourceBuffer;
+    shaderSourceBuffer.Ptr = shaderSource->GetBufferPointer();
+    shaderSourceBuffer.Size = shaderSource->GetBufferSize();
+    shaderSourceBuffer.Encoding = DXC_CP_UTF8;//UTFT8の文字コードであることを通知
+    //2.Compileする
+    LPCWSTR arguments[] = {
+    	 filePath.c_str(),//コンパイル対象のhlslファイル名
+    	 L"-E",L"main",//エントリーポイントの指定。基本的にmain以外にはしない
+    	 L"-T",profile,//ShaderProfileの設定
+    	 L"-Zi",L"-Qembed_debug",//デバック用の情報を埋め込む
+    	 L"-Od",//最適化を外しておく
+    	 L"-Zpr",//メモリレイアウトは行優先
+    };
+    //実際にShaderをコンパイルする
+    IDxcResult* shaderResult = nullptr;
+    hr = dxcCompiler_->Compile(
+    	&shaderSourceBuffer,//読み込んだファイル
+    	arguments,//コンパイルオプション
+    	_countof(arguments),//コンパイルオプションの数
+    	includeHandler_.Get(),//includeが含まれた諸々
+    	IID_PPV_ARGS(&shaderResult)
+    );
+    //コンパイルエラーではなくdxcが起動できないなど致命的な状況
+    assert(SUCCEEDED(hr));
+    
+    	//3.警告・エラーがでていないか確認する
+    	IDxcBlobUtf8* shaderError = nullptr;
+    	shaderResult->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(&shaderError), nullptr);
+    	if (shaderError != nullptr && shaderError->GetStringLength() != 0)
+    	{
+    		Log(shaderError->GetStringPointer());
+    		//警告・エラーダメゼッタイ
+    		assert(false);
+    
+    	}
+    
+    	//4.Compile結果を受け取って返す
+    	IDxcBlob* shaderBlob = nullptr;
+    	hr = shaderResult->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(&shaderBlob), nullptr);
+    	assert(SUCCEEDED(hr));
+    	////成功したログを出す
+    	Log(ConverString(std::format(L"Resources/shader/Compile Succeeded,path:{},profile:{}\n", filePath, profile)));
+    	//もう使わないリソースを解放
+    	shaderSource->Release();
+    	shaderResult->Release();
+		includeHandler_->Release();
+    	//実行用のパイナリを返却
+    	return shaderBlob;
 }
 
 Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateBufferResource(size_t sizeInBytes)
 {
-	Microsoft::WRL::ComPtr<ID3D12Resource> resource;
-
-
+	
 	//頂点バッファビューを作成する
 	D3D12_HEAP_PROPERTIES uploadHeapProperties{};
 	uploadHeapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;//UploadHeapを使う
@@ -448,9 +494,8 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateBufferResource(size_
 	vertexResourceDesc.SampleDesc.Count = 1;
 	//バッファの場合はこれにする決まり
 	vertexResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-	ID3D12Resource* CreateBufferResource(ID3D12Device * device, size_t sizeInBytes);
 	//実際に頂点リソースを作る
-	ID3D12Resource* vertexResource = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource = nullptr;
 	HRESULT hr = device->CreateCommittedResource(&uploadHeapProperties, D3D12_HEAP_FLAG_NONE,
 		&vertexResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
 		IID_PPV_ARGS(&vertexResource));
@@ -514,6 +559,8 @@ void DirectXCommon::UploadTextureData(const Microsoft::WRL::ComPtr<ID3D12Resourc
 
 DirectX::ScratchImage DirectXCommon::LoadTexture(const std::string& filePath)
 {
+
+
 	//テクスチャファイルを読んでプログラムで扱えるようにする
 	DirectX::ScratchImage image{};
 	std::wstring filePathW = ConverString(filePath);
@@ -525,36 +572,169 @@ DirectX::ScratchImage DirectXCommon::LoadTexture(const std::string& filePath)
 	hr = DirectX::GenerateMipMaps(image.GetImages(), image.GetImageCount(),
 		image.GetMetadata(), DirectX::TEX_FILTER_SRGB, 0, mipImages);
 	
-
+	return mipImages;
 }
 
-
-//Resource作成
-ID3D12Resource* CreateBufferResource(ID3D12Device* device, size_t sizeInBytes)
+ModelData DirectXCommon::LoadObjFile(const std::string& directoryPath, const std::string& filename)
 {
-	//頂点バッファビューを作成する
-	D3D12_HEAP_PROPERTIES uploadHeapProperties{};
-	uploadHeapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;//UploadHeapを使う
-	//頂点リーソスの設定
-	D3D12_RESOURCE_DESC vertexResourceDesc{};
-	//バッファリーソス。テクスチャの場合はまた別の設定をする
-	vertexResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-	vertexResourceDesc.Width = sizeInBytes;//リーソスのサイズ。こんかいはVector4を3頂点分
-	//バッファの場合はこれらは1にする決まり
-	vertexResourceDesc.Height = 1;
-	vertexResourceDesc.DepthOrArraySize = 1;
-	vertexResourceDesc.MipLevels = 1;
-	vertexResourceDesc.SampleDesc.Count = 1;
-	//バッファの場合はこれにする決まり
-	vertexResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-	//ID3D12Resource* CreateBufferResource(ID3D12Device * device, size_t sizeInBytes);
-	//実際に頂点リソースを作る
-	ID3D12Resource* vertexResource = nullptr;
-	HRESULT hr = device->CreateCommittedResource(&uploadHeapProperties, D3D12_HEAP_FLAG_NONE,
-		&vertexResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
-		IID_PPV_ARGS(&vertexResource));
-	assert(SUCCEEDED(hr));
+	//1.中で必要となる変数の宣言
+	ModelData modelData;//構築するModelData
+	std::vector<Vector4> positions;//位置
+	std::vector<Vector3> normals;//法線
+	std::vector<Vector2> texcoords;//テクスチャ座標
+	std::string line;//ファイルから読んだ1行を格納するもの
+	//2.ファイルを開く
+	std::ifstream file(directoryPath + "/" + filename);//ファイルを開く
+	assert(file.is_open());//とりあえず開けなかったら止める
+	//3.実際にファイルを読み、MOdelDataを構築していく
+	while (std::getline(file, line))
+	{
+		std::string identifier;
+		std::istringstream s(line);
+		s >> identifier;//先頭の識別子を読む
+
+		//identifierに応じた処理
+		if (identifier == "v")
+		{
+			Vector4 position;
+			s >> position.x >> position.y >> position.z;
+			position.w = 1.0f;
+			positions.push_back(position);
+		} else if (identifier == "vt")
+		{
+			Vector2 texcoord;
+			s >> texcoord.x >> texcoord.y;
+			texcoords.push_back(texcoord);
+		} else if (identifier == "vn")
+		{
+			Vector3 normal;
+			s >> normal.x >> normal.y >> normal.z;
+			normals.push_back(normal);
+		} else if (identifier == "f")
+		{
+			VertexData triangle[3];
+			//面は三角形限定。その他は未対応
+			for (int32_t faceVertex = 0; faceVertex < 3; faceVertex++)
+			{
+				std::string vertexDefinition;
+				s >> vertexDefinition;
+				//頂点の要素へのIndexは「位置/UV/法線」で格納されているので、分解してIndexを取得する
+				std::istringstream v(vertexDefinition);
+				uint32_t elementIndices[3];
+				for (int32_t element = 0; element < 3; element++)
+				{
+					std::string index;
+					std::getline(v, index, '/');//区切りでインデックスを読んでいく
+					elementIndices[element] = std::stoi(index);
+				}
+				//要素へのIndexから,実際の要素の値を取得して、頂点を構築する
+				Vector4 position = positions[elementIndices[0] - 1];
+				position.x *= 1.0f;
+				Vector2 texcoord = texcoords[elementIndices[1] - 1];
+				texcoord.y = 1.0f - texcoord.y;
+				Vector3 normal = normals[elementIndices[2] - 1];
+				normal.x *= 1.0f;
+				VertexData vertex = { position, texcoord };
+				modelData.vertices.push_back(vertex);
+				triangle[faceVertex] = { position,texcoord };
+			}
+			//頂点を逆順で登録することで、回り順を逆にする
+			modelData.vertices.push_back(triangle[2]);
+			modelData.vertices.push_back(triangle[1]);
+			modelData.vertices.push_back(triangle[0]);
+		} else if (identifier == "mtllib")
+		{
+			//materialTemplateLibararyファイルの名前を取得する
+			std::string materialFilename;
+			s >> materialFilename;
+			//基本的にobjファイルと同一階層にmtlは存在させるので、ディレクトリ名とファイル名を渡す
+			modelData.material = LoagMaterialTemplateFile(directoryPath, materialFilename);
+		}
+	}
+	//4.ModelDataを返す
+	return modelData;
 }
+
+MaterialData DirectXCommon::LoagMaterialTemplateFile(const std::string& directoryPath, const std::string& filename)
+{
+	//1.中で必要となる変数の宣言
+	MaterialData materialData;//構築するMaterialData
+	std::string line;//ファイルから読んだ1行を格納するもの
+	//2.ファイルを開く
+	std::ifstream file(directoryPath + "/" + filename);
+	assert(file.is_open());//とりあえず開けなかったら止める
+	//3.実際にファイルを読み、MaterialDataを構築していく
+	while (std::getline(file, line))
+	{
+		std::string identifier;
+		std::istringstream s(line);
+		s >> identifier;
+
+		//identifierに応じた処理
+		if (identifier == "map_Kd")
+		{
+			std::string textureFilename;
+			s >> textureFilename;
+			//連結してファイルパスにする
+			materialData.textrueFilePath = directoryPath + "/" + textureFilename;
+		}
+	}
+	//4.MeterialDataを返す
+	return materialData;
+
+
+}
+
+UINT DirectXCommon::GetDescriptorHandleIncrementSize(
+	D3D12_DESCRIPTOR_HEAP_TYPE heapType) const {
+
+	return device->GetDescriptorHandleIncrementSize(heapType);
+}
+
+void DirectXCommon::CreateShaderResourceView(ID3D12Resource* resource, const D3D12_SHADER_RESOURCE_VIEW_DESC* srvDesc, D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle)
+{
+	device->CreateShaderResourceView(
+		resource,
+		srvDesc,
+		cpuHandle
+	);
+}
+
+ID3D12RootSignature* DirectXCommon::CreateRootSignature(
+	const D3D12_ROOT_SIGNATURE_DESC& desc
+) {
+	Microsoft::WRL::ComPtr<ID3DBlob> signatureBlob;
+	Microsoft::WRL::ComPtr<ID3DBlob> errorBlob;
+
+	HRESULT hr = D3D12SerializeRootSignature(
+		&desc,
+		D3D_ROOT_SIGNATURE_VERSION_1,
+		&signatureBlob,
+		&errorBlob
+	);
+
+	if (FAILED(hr)) {
+		if (errorBlob) {
+			OutputDebugStringA(
+				static_cast<char*>(errorBlob->GetBufferPointer())
+			);
+		}
+		(false);
+	}
+
+	ID3D12RootSignature* rootSignature = nullptr;
+	hr = device->CreateRootSignature(
+		0,
+		signatureBlob->GetBufferPointer(),
+		signatureBlob->GetBufferSize(),
+		IID_PPV_ARGS(&rootSignature)
+	);
+	assert(SUCCEEDED(hr));
+
+	return rootSignature;
+}
+
+
 
 
 void DirectXCommon::PreDraw()
