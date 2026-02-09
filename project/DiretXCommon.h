@@ -16,6 +16,11 @@
 #include"StringUtility.h"
 #include<chrono>
 #include <thread>
+#include<dxgidebug.h>
+#include "externals/DirectXTex/DirectXTex.h"
+
+using namespace Logger;
+using namespace StringUtility;
 
 //DirectX基盤
 class DirectXCommon
@@ -76,6 +81,21 @@ public:
 	//スワップチェーンリソース
 	Microsoft::WRL::ComPtr<ID3D12Resource>swapChainResources[2];
 
+	//getter
+	ID3D12Device* GetDrive() const { return device.Get(); }
+	ID3D12GraphicsCommandList* GetCommandList() const { return commandList.Get(); }
+
+	//シェーダーコンパイル
+	Microsoft::WRL::ComPtr<IDxcBlob>CompileShader(const std::wstring& filePath, const wchar_t* profile);
+
+	Microsoft::WRL::ComPtr<ID3D12Resource> CreateBufferResource(size_t sizeInBytes);
+
+	Microsoft::WRL::ComPtr<ID3D12Resource> CreateTextureResource(const DirectX::TexMetadata& metadata);
+
+	void UploadTextureData(Microsoft::WRL::ComPtr<ID3D12Resource> texture, const DirectX::ScratchImage& mipImages);
+
+	static DirectX::ScratchImage LoadTexture(const std::string& filePath);
+
 private:
 
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>
@@ -84,6 +104,11 @@ private:
 
 	Microsoft::WRL::ComPtr<ID3D12Fence>fence;
 	HANDLE fenceEvent = nullptr;
+
+	Microsoft::WRL::ComPtr<IDxcUtils> dxcUtils_;
+	Microsoft::WRL::ComPtr<IDxcCompiler3> dxcCompiler_;
+	Microsoft::WRL::ComPtr<IDxcIncludeHandler> includeHandler_;
+
 
 	//ビューポート
 	D3D12_VIEWPORT viewport{};
@@ -103,4 +128,7 @@ private:
 	void UpdateFixFPS();
 	//記録時間
 	std::chrono::steady_clock::time_point reference_;
+
+
+
 };
