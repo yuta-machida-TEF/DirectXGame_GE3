@@ -2,6 +2,7 @@
 #include<windows.h>
 #include<stdint.h>
 
+
 //WindowsAPI
 class WinApp
 {

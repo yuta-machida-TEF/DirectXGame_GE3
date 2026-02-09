@@ -8,60 +8,19 @@
 #include "externals/imgui/imgui.h"
 #include "externals/imgui/imgui_impl_dx12.h"
 #include "externals/imgui/imgui_impl_win32.h"
-#include<fstream>
-#include<sstream>
-#include "externals/DirectXTex/DirectXTex.h"
 #include<format>
 #include <dxcapi.h>
 #include<cassert>
 #include<array>
 #include"logger.h"
 #include"StringUtility.h"
-#pragma comment(lib, "dxcompiler.lib")
-
-struct Vector4
-{
-	float x;
-	float y;
-	float z;
-	float w;
-};
-
-struct Vector3 {
-	float x;
-	float y;
-	float z;
-};
-
-struct Vector2
-{
-	float x;
-	float y;
-};
-
-struct VertexData
-{
-	Vector4 position;
-	Vector2 texcoord;
-};
-
-struct MaterialData
-{
-	std::string textrueFilePath;
-};
-
-struct ModelData
-{
-	std::vector<VertexData>vertices;
-	MaterialData material;
-};
-
+#include<chrono>
+#include <thread>
 
 //DirectX基盤
 class DirectXCommon
 {
 public:
-
 	void Initialize(WinApp* winApp);
 
 	void CreateDrive();//デバイスの生成
@@ -117,47 +76,6 @@ public:
 	//スワップチェーンリソース
 	Microsoft::WRL::ComPtr<ID3D12Resource>swapChainResources[2];
 
-	//getter
-	ID3D12Device* GetDevice() const { return device.Get(); }
-	ID3D12GraphicsCommandList* GetCommandList() const { return commandList.Get(); }
-
-	//シェーダーのコンパイル
-	Microsoft::WRL::ComPtr<IDxcBlob>CompileShader
-	(const std::wstring& filePath,
-		const wchar_t* profile);
-
-	//バッファリソースの生成
-	Microsoft::WRL::ComPtr<ID3D12Resource>CreateBufferResource(size_t sizeInBytes);
-	//テクスチャリソースの生成
-	Microsoft::WRL::ComPtr<ID3D12Resource>CreateTextrueResource(const DirectX::TexMetadata& metadata);
-	//テクスチャデータの転送
-	void UploadTextureData(const Microsoft::WRL::ComPtr<ID3D12Resource>& texture,
-		const DirectX::ScratchImage& mipImages);
-	//テクスチャファイルの読み込み
-	static DirectX::ScratchImage LoadTexture(const std::string& filePath);
-
-	ModelData LoadObjFile(const std::string& directoryPath,
-		const std::string& filename);
-
-	MaterialData LoagMaterialTemplateFile(const std::string& directoryPath,
-		                                  const std::string& filename);
-
-	UINT GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE heapType) const;
-
-	void CreateShaderResourceView(
-		ID3D12Resource* resource,
-		const D3D12_SHADER_RESOURCE_VIEW_DESC* srvDesc,
-		D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle
-	);
-
-	ID3D12RootSignature* CreateRootSignature(
-		const D3D12_ROOT_SIGNATURE_DESC& desc
-	);
-
-	ID3D12GraphicsCommandList* GetCommandList() const {
-		return commandList.Get();
-	}
-
 private:
 
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>
@@ -172,18 +90,17 @@ private:
 	//シザリング短形
 	D3D12_RECT scissorRect{};
 
+
 	//DXGIファクトリ
 	Microsoft::WRL::ComPtr<IDXGIFactory7> dxgiFactory;
 	//WindowsAPI
 	WinApp* winApp = nullptr;
 	std::array<D3D12_CPU_DESCRIPTOR_HANDLE, 2>rtvHandles{};
 
-
-	Microsoft::WRL::ComPtr<IDxcUtils> dxcUtils_;
-	Microsoft::WRL::ComPtr<IDxcCompiler3> dxcCompiler_;
-
-	Microsoft::WRL::ComPtr<ID3D12Device> device_;
-	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList_;
-	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> commandAllocator_;
-
+	//FPS固定初期化
+	void InitializeFixFPS();
+	//FPS固定更新
+	void UpdateFixFPS();
+	//記録時間
+	std::chrono::steady_clock::time_point reference_;
 };
