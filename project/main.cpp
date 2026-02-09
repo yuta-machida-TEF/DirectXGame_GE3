@@ -1,10 +1,9 @@
 #include<string>
 #include "Input.h"
-//DirectInputインクルード
-#pragma comment(lib, "dxcompiler.lib")
 #include<fstream>
 #include<sstream>
 #include"DiretXCommon.h"
+
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -346,8 +345,8 @@ ModelData LoadObjFile(const std::string& directoryPath, const std::string& filen
 				texcoord.y = 1.0f - texcoord.y;
 				Vector3 normal = normals[elementIndices[2] - 1];
 				//normal.x *= 1.0f;
-			/*	VertexData vertex = { position, texcoord };
-				modelData.vertices.push_back(vertex);*/
+				VertexData vertex = { position, texcoord };
+				modelData.vertices.push_back(vertex);
 				triangle[faceVertex] = { position,texcoord };
 			}
 			//頂点を逆順で登録することで、回り順を逆にする
@@ -388,9 +387,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	input->Initialize(winApp);
 
 	//ポインタ
-	DirectXCommon* dxCommon = nullptr;
+	DirectXCommon* dxCommon = {};
 	dxCommon = new DirectXCommon();
 	dxCommon->Initialize(winApp);
+
+
 
 #ifdef _DEBUG//DEBUGはCreateWindowの直後
 
@@ -543,15 +544,19 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		rasterizerDesc.CullMode = D3D12_CULL_MODE_BACK;
 		//三角形の中を塗りつぶす
 		rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
+
 		////Shaderをコンパイルする
-		Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = dxCommon->CompileShader(L"Resources/shader/Object3D.VS.hlsl",
-			L"vs_6_0", dxcUtlis, dxcCompiler, includeHandler);
+		Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = 
+			dxCommon->CompileShader(L"Resources/shader/Object3D.VS.hlsl",L"vs_6_0");
 		assert(vertexShaderBlob != nullptr);
 		
 		
-		Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = dxCommon->CompileShader(L"Resources/shader/Object3D.PS.hlsl",
-			L"ps_6_0", dxcUtlis, dxcCompiler, includeHandler);
+		Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = 
+			dxCommon->CompileShader(L"Resources/shader/Object3D.PS.hlsl",
+			L"ps_6_0");
 		assert(pixelShaderBlob != nullptr);
+
+
 
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC graphicsPipelineStateDesc{};
 		graphicsPipelineStateDesc.pRootSignature = roolSignatrue;//RootSignatrue
@@ -606,11 +611,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		*materialData = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
 		////Transform変数を作る。
 		Transform cameraTransform{ {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,-5.0f} };
-		//
-		//
+		
+		
+
 		////Textureを読んで転送する
-		//DirectX::ScratchImage mipImages = LoadTexture("resources/uvChecker.png");
-		DirectX::ScratchImage mipImages = dxCommon->LoadTexture(modelData.material.textrueFilePath);
+		DirectX::ScratchImage mipImages = dxCommon->LoadTexture("resources/uvChecker.png");
+		//DirectX::ScratchImage mipImages = dxCommon->LoadTexture(modelData.material.textrueFilePath);
 		const DirectX::TexMetadata& metadata = mipImages.GetMetadata();
 		Microsoft::WRL::ComPtr<ID3D12Resource> textureResource = dxCommon->CreateTextureResource(metadata);
 		dxCommon->UploadTextureData(textureResource, mipImages);
@@ -622,15 +628,19 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 		srvDesc.Texture2D.MipLevels = UINT(metadata.mipLevels);
 		
+
+		ID3D12Device* device = dxCommon->GetDrive();
+
 		//SRVを作成するDescriptorHeapの場所を決める
 		D3D12_CPU_DESCRIPTOR_HANDLE textureSrvHandleCPU = dxCommon->srvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
 		D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandleGPU = dxCommon->srvDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
 
-		////先頭はImGuiが使っているのでその次を使う
-		//textureSrvHandleCPU.ptr += device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-		//textureSrvHandleGPU.ptr += device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-		////SRVの生成
-		//device->CreateShaderResourceView(textureResource, &srvDesc, textureSrvHandleCPU);
+		//先頭はImGuiが使っているのでその次を使う
+		textureSrvHandleCPU.ptr += device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		textureSrvHandleGPU.ptr += device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+		//SRVの生成
+		device->CreateShaderResourceView(textureResource.Get(), &srvDesc, textureSrvHandleCPU);
 
 		//DSVHeapの先頭にDSVを作る
 		D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc{};
@@ -712,10 +722,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		//ウィンドウのxボタンが押されるまでループ
 	while (true) {
-		//描画前処理
-		dxCommon->PreDraw();
-		//描画後処理
-		dxCommon->PostDraw();
 		//Windowにメッセージが来てたら最優先で処理させる
 		if (winApp->ProcessMessage())
 		{
@@ -733,116 +739,129 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		}
 
-		/*ImGui_ImplDX12_NewFrame();
+		ImGui_ImplDX12_NewFrame();
 		ImGui_ImplWin32_NewFrame();
-		ImGui::NewFrame();*/
+		ImGui::NewFrame();
 
-		//Matrix4x4 worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
-		//Matrix4x4 cameraMatrix = MakeAffineMatrix(cameraTransform.scale, cameraTransform.rotate, cameraTransform.translate);
-		//Matrix4x4 viewMatrix = Inverse(cameraMatrix);
-		//Matrix4x4 projectionMatrix = MakePerspectiveFovMatrix(0.45f, float(WinApp::kClientWidth) / float(WinApp::kClientHeight), 0.1f, 100.0f);
-		//Matrix4x4 worldViewProjectionMatrix = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
-		//*wvpData = worldViewProjectionMatrix;
-		//
-		////SPrite用のWorldViewProjectionMatrixを作る
-		//Matrix4x4 worldMatrixSprite = MakeAffineMatrix(transformSprite.scale, transformSprite.rotate, transformSprite.translate);
-		//Matrix4x4 viewMatrixSprite = MakeIdentity4x4();
-		//Matrix4x4 projectionMatrixSprite = MakeOrthographicMatrix(0.0f, 0.0f, float(WinApp::kClientWidth), float(WinApp::kClientHeight), 0.0f, 100.0f);
-		//Matrix4x4 worldViewProjectionMatrixSprite = Multiply(worldMatrixSprite, Multiply(viewMatrixSprite, projectionMatrixSprite));
-		//*transformationMatrixDataSPrite = worldViewProjectionMatrixSprite;
+		ImGui::Begin("Sprite");
+		ImGui::ColorEdit4("material", &materialData->x, ImGuiColorEditFlags_AlphaPreview);
+		ImGui::DragFloat2("Sprite transform", &transformSprite.translate.x, 1.0f);
+		ImGui::End();
+
+		ImGui::Begin("Object");
+		ImGui::ColorEdit4("material", &materialData->x, ImGuiColorEditFlags_AlphaPreview);
+		ImGui::DragFloat("rotate.y", &transform.rotate.y, 0.1f);
+		ImGui::DragFloat3("transform", &transform.translate.x, 0.1f);
+		//ImGui::DragFloat2("transform", &transformSpri.translate.x, 1.0f);
+		ImGui::End();
+
+		Matrix4x4 worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
+		Matrix4x4 cameraMatrix = MakeAffineMatrix(cameraTransform.scale, cameraTransform.rotate, cameraTransform.translate);
+		Matrix4x4 viewMatrix = Inverse(cameraMatrix);
+		Matrix4x4 projectionMatrix = MakePerspectiveFovMatrix(0.45f, float(WinApp::kClientWidth) / float(WinApp::kClientHeight), 0.1f, 100.0f);
+		Matrix4x4 worldViewProjectionMatrix = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
+		*wvpData = worldViewProjectionMatrix;
+		
+		//SPrite用のWorldViewProjectionMatrixを作る
+		Matrix4x4 worldMatrixSprite = MakeAffineMatrix(transformSprite.scale, transformSprite.rotate, transformSprite.translate);
+		Matrix4x4 viewMatrixSprite = MakeIdentity4x4();
+		Matrix4x4 projectionMatrixSprite = MakeOrthographicMatrix(0.0f, 0.0f, float(WinApp::kClientWidth), float(WinApp::kClientHeight), 0.0f, 100.0f);
+		Matrix4x4 worldViewProjectionMatrixSprite = Multiply(worldMatrixSprite, Multiply(viewMatrixSprite, projectionMatrixSprite));
+		*transformationMatrixDataSPrite = worldViewProjectionMatrixSprite;
 
 
 		//開発用UIの処理。実際に開発用のUIを出す場合はここをゲーム固有の処理に置き換える
 		//ImGui::ShowDemoWindow();
 
 		//ImGuiの内部コマンドを生成する
-		//ImGui::Render();
+		ImGui::Render();
 
+		//描画前処理
+		dxCommon->PreDraw();
 
+		dxCommon->CreateView();//Viewportを設定
+		dxCommon->CreateScissor();//Scirssorを設定
+		//RootSignatrueを設定。PSPに設定しているけど別途設定が必要
+		dxCommon->commandList->SetGraphicsRootSignature(roolSignatrue);
+		dxCommon->commandList->SetPipelineState(graphicsPipelineState);//PSOを設定
+		dxCommon->commandList->IASetVertexBuffers(0, 1, &vertexBufferView);//VBVを設定
+		//形状を設定。PSOに設定しているものとはまた別。同じものを設定すると考えておけば良い
+		dxCommon->commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		//マテリアルCBufferの場所を設定
+		dxCommon->commandList->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
+		dxCommon->commandList->SetGraphicsRootConstantBufferView(1, wvpResource->GetGPUVirtualAddress());//これをいれないと描画ができない
+		dxCommon->commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU);
 
-		//commandList->RSSetViewports(1, &viewport);//Viewportを設定
-		//commandList->RSSetScissorRects(1, &scissorRect);//Scirssorを設定
-		////RootSignatrueを設定。PSPに設定しているけど別途設定が必要
-		//commandList->SetGraphicsRootSignature(roolSignatrue);
-		//commandList->SetPipelineState(graphicsPipelineState);//PSOを設定
-		//commandList->IASetVertexBuffers(0, 1, &vertexBufferView);//VBVを設定
-		////形状を設定。PSOに設定しているものとはまた別。同じものを設定すると考えておけば良い
-		//commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		////マテリアルCBufferの場所を設定
-		//commandList->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
-		//commandList->SetGraphicsRootConstantBufferView(1, wvpResource->GetGPUVirtualAddress());//これをいれないと描画ができない
-		//commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU);
 
 		//transform.rotate.y += 0.03f;
 
 
 		//描画!(DrawCall/ドローコール)。3頂点で1つのインタランス。インタランスについては今後
-		//commandList->DrawInstanced(UINT(modelData.vertices.size()), 1, 0, 0);
+		dxCommon->commandList->DrawInstanced(UINT(modelData.vertices.size()), 1, 0, 0);
 
 		//Spriteの描画。変更が必要なものだけ変更する
-		//commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSprite);//VBVを設定
-		////TransformationMatrixCBufferの場所を設定
-		//commandList->SetGraphicsRootConstantBufferView(1, transformtionMatrixResourceSprite->GetGPUVirtualAddress());
-		////インデックスを指定
-		//commandList->IASetIndexBuffer(&indexBufferViewSprite);//IBVを設定
-		//
-		////実際のcommandListのImGuiの描画コマンドを積む
-		//ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
-		//
-		////画面に描く処理はすべて終わり、画面に映すので、状態を遷移
-		////今回はRenderTargetからPresentにする
-		////TransitionBarrierを振る
-
-
+		dxCommon->commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSprite);//VBVを設定
+		//TransformationMatrixCBufferの場所を設定
+		dxCommon->commandList->SetGraphicsRootConstantBufferView(1, transformtionMatrixResourceSprite->GetGPUVirtualAddress());
+		//インデックスを指定
+		dxCommon->commandList->IASetIndexBuffer(&indexBufferViewSprite);//IBVを設定
+		
+		//実際のcommandListのImGuiの描画コマンドを積む
+		ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), dxCommon->commandList.Get());
+		
+		//画面に描く処理はすべて終わり、画面に映すので、状態を遷移
+		//今回はRenderTargetからPresentにする
+		//TransitionBarrierを振る
 
 		////コマンドリストの内容を確定させる。すべてのコマンドをつんでからCloseすること
-		//hr = commandList->Close();
-		//assert(SUCCEEDED(hr));
-
+		hr = dxCommon->commandList->Close();
+		assert(SUCCEEDED(hr));
+		//描画後処理
+		dxCommon->PostDraw();
 
 	}
 
 	//Log(ConverString(std::format(L"WSTRING{}\n", L"abc")));
 
 
-	//CloseHandle(fenceEvent);
-	//fence->Release();
-	//rtvDescriptorHeap->Release();
-	//swapChainResources[0]->Release();
-	//swapChainResources[1]->Release();
-	//swapChain->Release();
-	//commandQueue->Release();
+	//CloseHandle(dxCommon->fenceEvent);
+	////dxCommon->fence->Release();
+	//dxCommon->rtvDescriptorHeap->Release();
+	//dxCommon->swapChainResources[0]->Release();
+	//dxCommon->swapChainResources[1]->Release();
+	//dxCommon->swapChain->Release();
+	//dxCommon->commandQueue->Release();
 	//device->Release();
-	////useAdapter->Release();
-	//dxgiFactory->Release();
-	//vertexResource->Release();
-	//graphicsPipelineState->Release();
-	//signatureBlob->Release();
-	//if (errorBlob)
-	//{
-	//	errorBlob->Release();
-	//}
-	//roolSignatrue->Release();
-	//pixelShaderBlob->Release();
-	//vertexShaderBlob->Release();
-	//materialResource->Release();
-	//
-	//transformtionMatrixResourceSprite->Release();
-	//vertexResourceSprite->Release();
-	//
-	//wvpResource->Release();
-	//textureResource->Release();
-	//dsvDescriptorHeap->Release();
-	//srvDescriptorHeap->Release();
-	//commandList->Release();
-	//commandAllocator->Release();
-	//indexResourceSprice->Release();
+	//useAdapter->Release();
+	//dxCommon->dxgiFactory->Release();
+	vertexResource->Release();
+	graphicsPipelineState->Release();
+	signatureBlob->Release();
+	if (errorBlob)
+	{
+		errorBlob->Release();
+	}
+	roolSignatrue->Release();
+	pixelShaderBlob->Release();
+	vertexShaderBlob->Release();
+	/*materialResource->Release();
+	
+	transformtionMatrixResourceSprite->Release();
+	vertexResourceSprite->Release();
+	
+	wvpResource->Release();
+	textureResource->Release();
+	dxCommon->dsvDescriptorHeap->Release();
+	dxCommon->srvDescriptorHeap->Release();
+	dxCommon->commandList->Release();
+	dxCommon->commandAllocator->Release();
+	indexResourceSprice->Release();*/
 	//
 	//////ImGuiの終了処理。詳細はさして重要ではないので解説は省略する
 	//////こういうもんである。初期化と逆順に行う
-	//ImGui_ImplDX12_Shutdown();
-	//ImGui_ImplWin32_Shutdown();
-	//ImGui::DestroyContext();
+	ImGui_ImplDX12_Shutdown();
+	ImGui_ImplWin32_Shutdown();
+	ImGui::DestroyContext();
 
 
 
@@ -852,19 +871,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	//警告時に止まる
 	//infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, true);
-
-	//リソースリークチェック
-	/*IDXGIDebug1* debug;
-	if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&debug))))
-	{
-		debug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_ALL);
-		debug->ReportLiveObjects(DXGI_DEBUG_APP, DXGI_DEBUG_RLO_ALL);
-		debug->ReportLiveObjects(DXGI_DEBUG_D3D12, DXGI_DEBUG_RLO_ALL);
-		debug->Release();
-	}
-
-	CoUninitialize();*/
-
 	//入力解放
 	delete input;
 

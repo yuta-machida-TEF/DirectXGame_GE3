@@ -1,23 +1,23 @@
 
 #pragma once
-#include<d3d12.h>
-#include<dxgi1_6.h>
-#include<wrl.h>
 #include"WinApp.h"
 #include<Windows.h>
 #include "externals/imgui/imgui.h"
 #include "externals/imgui/imgui_impl_dx12.h"
 #include "externals/imgui/imgui_impl_win32.h"
 #include<format>
-#include <dxcapi.h>
 #include<cassert>
 #include<array>
 #include"logger.h"
 #include"StringUtility.h"
 #include<chrono>
 #include <thread>
-#include<dxgidebug.h>
 #include "externals/DirectXTex/DirectXTex.h"
+#include <dxcapi.h>
+#pragma comment(lib, "dxcompiler.lib")
+#include<wrl.h>
+#include<d3d12.h>
+#include<dxgi1_6.h>
 
 using namespace Logger;
 using namespace StringUtility;
@@ -68,6 +68,8 @@ public:
 
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> dsvDescriptorHeap;
 
+	D3D12_VIEWPORT viewport_;
+	D3D12_RECT scissorRect_;
 
 	// 指定番号のCPUデスクリプタハンドルを取得する
 	static D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescriptorHandle(
@@ -81,10 +83,6 @@ public:
 	//スワップチェーンリソース
 	Microsoft::WRL::ComPtr<ID3D12Resource>swapChainResources[2];
 
-	//getter
-	ID3D12Device* GetDrive() const { return device.Get(); }
-	ID3D12GraphicsCommandList* GetCommandList() const { return commandList.Get(); }
-
 	//シェーダーコンパイル
 	Microsoft::WRL::ComPtr<IDxcBlob>CompileShader(const std::wstring& filePath, const wchar_t* profile);
 
@@ -96,14 +94,20 @@ public:
 
 	static DirectX::ScratchImage LoadTexture(const std::string& filePath);
 
+	//getter
+	ID3D12Device* GetDrive() const { return device.Get(); }
+	ID3D12GraphicsCommandList* GetCommandList() const { return commandList.Get(); }
+
+	Microsoft::WRL::ComPtr<ID3D12Fence>fence;
+	HANDLE fenceEvent = nullptr;
+	//DXGIファクトリ
+	Microsoft::WRL::ComPtr<IDXGIFactory7> dxgiFactory;
+
 private:
 
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>
 		CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE heapType, UINT numDescriptors,
 			bool shaderVisible);
-
-	Microsoft::WRL::ComPtr<ID3D12Fence>fence;
-	HANDLE fenceEvent = nullptr;
 
 	Microsoft::WRL::ComPtr<IDxcUtils> dxcUtils_;
 	Microsoft::WRL::ComPtr<IDxcCompiler3> dxcCompiler_;
@@ -111,13 +115,10 @@ private:
 
 
 	//ビューポート
-	D3D12_VIEWPORT viewport{};
+	D3D12_VIEWPORT viewport;
 	//シザリング短形
-	D3D12_RECT scissorRect{};
+	D3D12_RECT scissorRect;
 
-
-	//DXGIファクトリ
-	Microsoft::WRL::ComPtr<IDXGIFactory7> dxgiFactory;
 	//WindowsAPI
 	WinApp* winApp = nullptr;
 	std::array<D3D12_CPU_DESCRIPTOR_HANDLE, 2>rtvHandles{};

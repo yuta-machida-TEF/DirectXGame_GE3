@@ -1,4 +1,3 @@
-
 #include "DiretXCommon.h"
 #pragma comment(lib,"d3d12.lib")
 #pragma comment(lib,"dxgi.lib")
@@ -29,6 +28,24 @@ void DirectXCommon::Initialize(WinApp* winApp)
 	CreateDXC();
 	CreateImGui();
 
+	// --- DXC 初期化（★絶対ここ★）
+	HRESULT hr = DxcCreateInstance(
+		CLSID_DxcUtils,
+		IID_PPV_ARGS(&dxcUtils_)
+	);
+	assert(SUCCEEDED(hr));
+	assert(dxcUtils_ != nullptr);
+
+	hr = DxcCreateInstance(
+		CLSID_DxcCompiler,
+		IID_PPV_ARGS(&dxcCompiler_)
+	);
+	assert(SUCCEEDED(hr));
+	assert(dxcCompiler_ != nullptr);
+
+	hr = dxcUtils_->CreateDefaultIncludeHandler(&includeHandler_);
+	assert(SUCCEEDED(hr));
+	assert(includeHandler_ != nullptr);
 }
 
 void DirectXCommon::CreateDrive()
@@ -196,7 +213,6 @@ void DirectXCommon::CreateDepth()
 void DirectXCommon::CreateDescriptorHeapRTV()
 {
 
-
 	//RTV用のヒープでディスクリプタの数は2。RTVはShader内で触るものではないので、ShaderVisbleはfalse
 	rtvDescriptorHeap = CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 2, false);
 	//SRV用のヒープでディスクリプタの数は128。SRVはShader内で触るものではないので、ShaderVisbleはtrue
@@ -271,11 +287,13 @@ DirectXCommon::GetGPUDescriptorHandle(
 
 Microsoft::WRL::ComPtr<IDxcBlob> DirectXCommon::CompileShader(const std::wstring& filePath, const wchar_t* profile)
 {
+	HRESULT hr;
+
 	//1,hlslファイルを読む
 	Log(ConverString(std::format(L"Resources/shader/Begin CompileShader,path:{},profile:{}\n", filePath, profile)));
 	//hlslファイルを読む
-	IDxcBlobEncoding* shaderSource = nullptr;
-	HRESULT hr = dxcUtils_->LoadFile(filePath.c_str(), nullptr, &shaderSource);
+	IDxcBlobEncoding* shaderSource;
+	hr = dxcUtils_.Get()->LoadFile(filePath.c_str(), nullptr, &shaderSource);
 	//読めなかったら止める
 	assert(SUCCEEDED(hr));
 	//読み込んだファイルの内容を設定する
@@ -294,7 +312,7 @@ Microsoft::WRL::ComPtr<IDxcBlob> DirectXCommon::CompileShader(const std::wstring
 	};
 	//実際にShaderをコンパイルする
 	IDxcResult* shaderResult = nullptr;
-	hr = dxcCompiler_->Compile(
+	hr = dxcCompiler_.Get()->Compile(
 		&shaderSourceBuffer,//読み込んだファイル
 		arguments,//コンパイルオプション
 		_countof(arguments),//コンパイルオプションの数
@@ -491,11 +509,10 @@ void DirectXCommon::CreateFence()
 	HANDLE fenceEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	assert(fenceEvent != nullptr);
 }
-
+//ビューボート
+D3D12_VIEWPORT viewport{};
 void DirectXCommon::CreateView()
 {
-	//ビューボート
-	D3D12_VIEWPORT viewport{};
 	//クライアント領域のサイズと一緒にして画面全体に表示
 	viewport.Width = WinApp::kClientWidth;
 	viewport.Height = WinApp::kClientHeight;
@@ -505,10 +522,10 @@ void DirectXCommon::CreateView()
 	viewport.MaxDepth = 1.0f;
 }
 
+//ｼｻﾞｰ短形
+D3D12_RECT scissorRect{};
 void DirectXCommon::CreateScissor()
 {
-	//ｼｻﾞｰ短形
-	D3D12_RECT scissorRect{};
 	//基本的にビューボートと同じ短形が構成されるようにする
 	scissorRect.left = 0;
 	scissorRect.right = WinApp::kClientWidth;
