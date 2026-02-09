@@ -297,6 +297,7 @@ void DirectXCommon::InitializeFixFPS()
 	reference_ = std::chrono::steady_clock::now();
 }
 
+
 void DirectXCommon::UpdateFixFPS()
 {
 	//1/60秒ぴったりの時間
