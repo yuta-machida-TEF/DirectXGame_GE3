@@ -824,6 +824,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//Log(ConverString(std::format(L"WSTRING{}\n", L"abc")));
 
 
+
 	//CloseHandle(dxCommon->fenceEvent);
 	////dxCommon->fence->Release();
 	//dxCommon->rtvDescriptorHeap->Release();
