@@ -38,4 +38,3 @@ private:
 	WinApp* winApp_ = nullptr;
 
 };
-
