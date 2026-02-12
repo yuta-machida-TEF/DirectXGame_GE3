@@ -1,8 +1,8 @@
 #include<string>
-#include "Input.h"
+#include "engine/io/Input.h"
 #include<fstream>
 #include<sstream>
-#include"DiretXCommon.h"
+#include"engine/base/DiretXCommon.h"
 
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
