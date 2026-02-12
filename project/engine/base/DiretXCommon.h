@@ -22,6 +22,7 @@
 using namespace Logger;
 using namespace StringUtility;
 
+
 //DirectX基盤
 class DirectXCommon
 {
