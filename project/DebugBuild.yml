@@ -2,7 +2,7 @@ name: DebugBuild
 on:
   push:
     branches:
-      - master
+      - GE3_01-05
 env:
   # リポジトリのルートディレクトリを基点としたソリューションファイルのパス
   SOLUTION_FILE_PATH: project/DirectXGame_GE3.sin
