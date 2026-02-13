@@ -431,8 +431,6 @@ ID3D12Resource* CreateDepthStencilTextureResource(ID3D12Device* device, int32_t 
 	return resource;
 }
 
-
-
 IDxcBlob* CompileShader(
 	//CompilerするShaderファイルへのパス
 	const std::wstring& filePath,
