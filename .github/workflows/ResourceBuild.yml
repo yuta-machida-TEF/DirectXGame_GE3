@@ -3,7 +3,7 @@ name: ResourceBuild
 on:
   push:
     branches:
-      - master
+      - GE3_01-05
 env:
   SOLUTION_FILE_PATH: project/DirectXGame_CG2.sln
   CONFIGURATION: Resource
