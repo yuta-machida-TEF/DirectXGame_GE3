@@ -2,7 +2,7 @@ name: DebugBuild
 on:
   push:
     branches:
-      - master
+      - GE3_01-05
 env:
   SOLUTION_FILE_PATH: project/DirectXGame_CG2-CG2_Game.sin
   CONFIGURATION: Debug
