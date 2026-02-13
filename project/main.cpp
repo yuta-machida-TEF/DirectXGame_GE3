@@ -272,6 +272,7 @@ MaterialData LoagMaterialTemplateFile(const std::string& directoryPath, const st
 		s >> identifier;
 
 
+
 		//identifierに応じた処理
 		if (identifier == "map_Kd")
 		{
