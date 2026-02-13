@@ -1,12 +1,13 @@
 name: DebugBuild
 on:
   push:
-    branches: [ GE3_01-05 ]
+    branches:
+      - GE3_01-05
 
 
 env:
   # リポジトリのルートディレクトリを基点としたソリューションファイルのパス
-  SOLUTION_FILE_PATH: project/DirectXGame_GE3.sin
+  SOLUTION_FILE_PATH: project/DirectXGame_CG2-CG2_Game.sin
   #Visual Studio の構成(Debug / Release)
   CONFIGURATION: Debug
   jobs:
