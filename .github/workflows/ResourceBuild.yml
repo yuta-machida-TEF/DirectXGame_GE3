@@ -2,7 +2,7 @@ name: ResourceBuild
 on:
   push:
     branches:
-      - master
+    - master
 env:
   SOLUTION_FILE_PATH: project/DirectXGame_CG2.sln
   CONFIGURATION: Resource
