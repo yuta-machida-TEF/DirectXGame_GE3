@@ -2,16 +2,16 @@ name: UpdateResourceBuild
 on:
   push:
     branches:
-      - master
+    - master
 env:
   SOLUTION_FILE_PATH: project/DirectXGame_CG2.sln
-  CONFIGURATION: Resource
+  CONFIGURATION: Debug   # ← ここを変更
 jobs:
   build:
     runs-on: windows-2022
     steps:
       - name: Checkout
-        uses: actions/checkout@v4 
+        uses: actions/checkout@v4
       - name: Add MSBuild to PATH
         uses: microsoft/setup-msbuild@v2
         with:
