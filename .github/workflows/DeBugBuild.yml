@@ -4,7 +4,7 @@ on:
     branches:
       - master
 env:
-  SOLUTION_FILE_PATH: project/DirectXGame_CG2-CG2_Game.sin
+  SOLUTION_FILE_PATH: project/DirectXGame_CG2.sin
   CONFIGURATION: Debug
 jobs:
   build:
