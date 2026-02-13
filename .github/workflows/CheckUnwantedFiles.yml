@@ -7,20 +7,16 @@ on:
   push:
   branches:
   - 
-  
 #検出する不要なファイルのパターンを定義する場所変数。
 #---重要---
 #プロジェクトのニーズに合わせて、これらのリストを変更してください。
 #パターンはスペース区切りで指定します。
-
 env:
 #特定のファイル名(拡張子など)のパターン
-UNWANTED_NAME_PATTERWS: "*.pdb *.ilk *.uses *.ncb 
- *.suo *.log * .dmp * .zip imgui.ini desktop.ini
- dxcompiler.dll dxil.dll"
+UNWANTED_NAME_PATTERWS: "*.pdb *.ilk *.uses *.ncb *.suo *.log * .dmp * .zip imgui.ini desktop.ini dxcompiler.dll dxil.dll"
 #ディレクトリ名のパターン(ビルド出力フォルダなど)
-UNWANTED_NAME_PATTERWS: "generated x64 win32 arm64.vs
-bin ipch logs Dump"jobs:
+  UNWANTED_NAME_PATTERWS: "generated x64 win32 arm64.vs bin ipch logs Dump"
+jobs:
 check-files:
   name: 不要なファイルを検索
   runs-on: ubuntu-latest
@@ -54,5 +50,3 @@ run: |
           exit 1
         fi
         echo "リポジトリはクリーンです。"
-
-  
