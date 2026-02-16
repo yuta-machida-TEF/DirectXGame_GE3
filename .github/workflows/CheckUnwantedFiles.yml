@@ -6,8 +6,8 @@ on:
   workflow_dispatch:
   #masterブランチへのプッシュでも実行する
   push:
-    branches:
-    - master
+    branches: 
+      - GE3_01-06
 #検出する不要なファイルのパターンを定義する場所変数。
 #---重要---
 #プロジェクトのニーズに合わせて、これらのリストを変更してください。
