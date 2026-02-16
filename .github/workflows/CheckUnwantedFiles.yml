@@ -27,7 +27,7 @@ jobs:
        - name: リポジトリをチェックアウト
          uses: actions/checkout@v4
          
-       - name: 不要なファイルとディレクトリを検索(bash)
+       - name: 不要なファイルとディレクトリを検索 (bash)
          run: |
            #ディレクトリ条件を構築 (最初の不要な-o を後で削除)
            DIR_CONDITIONS=()
