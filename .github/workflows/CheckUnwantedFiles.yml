@@ -15,9 +15,9 @@ on:
 #パターンはスペース区切りで指定します。
 env:
 #特定のファイル名(拡張子など)のパターン
- UNWANTED_NAME_PATTERNS: "*.pdb *.ilk *.user *.ncb *.suo *.log *.dmp *.zip imgui.ini desktop.ini dxcompiler.dll dxil.dll"
+ UNWANTED_NAME_PATTERNS: "*.pdb*.ilk*.user*.ncb*.suo*.log*.dmp*.zipimgui.inidesktop.inidxcompiler.dlldxil.dll"
 #ディレクトリ名のパターン(ビルド出力フォルダなど)
- UNWANTED_DIR_PATTERNS: "generated x64 win32 arm64 .vs bin ipch logs Dump"
+ UNWANTED_DIR_PATTERNS: "generatedx64win32arm64.vsbinipchlogsDump"
 
 jobs:
   check-files:
