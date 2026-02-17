@@ -3,6 +3,8 @@
 #include<fstream>
 #include<sstream>
 #include"engine/base/DiretXCommon.h"
+#include"SpriteCommon.h"
+#include"Sprite.h"
 
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -393,6 +395,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	dxCommon = new DirectXCommon();
 	dxCommon->Initialize(winApp);
 
+	SpriteCommon* spriteCommon = nullptr;
+	//スプライト共通部の初期化
+	spriteCommon = new SpriteCommon;
+	spriteCommon->Initiailze();
+
+	Sprite* sprite = new Sprite();
+	sprite->Initiailze();
 
 
 #ifdef _DEBUG//DEBUGはCreateWindowの直後
@@ -886,6 +895,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	winApp = nullptr;
 	//DirectXの初期化
 	delete dxCommon;
+
+	delete spriteCommon;
+	delete sprite;
 
 	return 0;
 }
