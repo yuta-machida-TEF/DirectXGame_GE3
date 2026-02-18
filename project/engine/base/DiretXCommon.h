@@ -1,4 +1,3 @@
-
 #pragma once
 #include"WinApp.h"
 #include<Windows.h>
@@ -103,6 +102,9 @@ public:
 	HANDLE fenceEvent = nullptr;
 	//DXGIファクトリ
 	Microsoft::WRL::ComPtr<IDXGIFactory7> dxgiFactory;
+
+	void EnableDebugLayer();
+	void SetupInfoQueue();
 
 private:
 

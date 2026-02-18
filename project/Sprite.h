@@ -3,7 +3,6 @@
 class Sprite
 {
 public:
-	Sprite();
 
 	void Initiailze();
 

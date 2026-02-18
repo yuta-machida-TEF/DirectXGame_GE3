@@ -398,110 +398,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	SpriteCommon* spriteCommon = nullptr;
 	//スプライト共通部の初期化
 	spriteCommon = new SpriteCommon;
-	spriteCommon->Initiailze();
+	spriteCommon->Initiailze(dxCommon);
 
 	Sprite* sprite = new Sprite();
 	sprite->Initiailze();
-
-
-#ifdef _DEBUG//DEBUGはCreateWindowの直後
-
-	//ID3D12Debug1* debugController = nullptr;
-	//if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
-	//{
-	//	//デバックレイヤーを有効化する
-	//	debugController->EnableDebugLayer();
-	//	//さらにGPU側でもチェックを行うようにする
-	//	debugController->SetEnableGPUBasedValidation(TRUE);
-	//}
-#endif // _DEBUG
-
-
-
-
-#ifdef _DEBUG
-	//ID3D12InfoQueue* infoQueue = nullptr;
-	//if (SUCCEEDED(device->QueryInterface(IID_PPV_ARGS(&infoQueue))))
-	//{
-	//	//ヤバいエラー時に止まる
-	//	infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, true);
-	//	//エラー時に止まる
-	//	infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);
-	//	//警告時に止まる
-	//	infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, true);
-	//	//抑制するメッセージのID
-	//	D3D12_MESSAGE_ID denyIds[] = {
-	//		//Windows11でのDXGIデバックレイヤーとDX12デバックレイヤーの相互作用バグによるエラーメッセージ
-	////		//https://stackoberflow.com/questions/69805245/directx-12-application-is-crashing-in-windows-11
-	//		D3D12_MESSAGE_ID_RESOURCE_BARRIER_MISMATCHING_COMMAND_LIST_TYPE
-	//	};
-	//	//抑制するレベル
-	//	D3D12_MESSAGE_SEVERITY severities[] = { D3D12_MESSAGE_SEVERITY_INFO };
-	//	D3D12_INFO_QUEUE_FILTER filter{};
-	//	filter.DenyList.NumIDs = _countof(denyIds);
-	//	filter.DenyList.pIDList = denyIds;
-	//	filter.DenyList.NumSeverities = _countof(severities);
-	//	filter.DenyList.pSeverityList = severities;
-	//	//指定したメッセージの表示を抑制する
-	//	infoQueue->PushStorageFilter(&filter);
-
-	//	//解放
-	//	infoQueue->Release();
-	//}
-#endif // DEBUG
-	////SRV用のヒープでディスクリプタの数は128。SRVはShader内で触るものではないので、ShaderVisbleはtrue
-	//ID3D12DescriptorHeap* srvDescriptorHeap = CreateDescriptorHeap(device, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 128, true);
-
-
-
-	//hr = device->CreateCommandQueue(&commandQueueDesc, IID_PPV_ARGS(&commandQueue));
-
-
-	//=============================PSO===========================
-		//RootSignature作成
-	D3D12_ROOT_SIGNATURE_DESC descriptionRootSignature{};
-	descriptionRootSignature.Flags =
-		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
-
-	D3D12_DESCRIPTOR_RANGE descriptorRange[1] = {};
-	descriptorRange[0].BaseShaderRegister = 0;//0から始める
-	descriptorRange[0].NumDescriptors = 1;//数は1つ
-	descriptorRange[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;//SRVを使う
-	descriptorRange[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;//Offsetを自動計算
-
-	//ConstantBuffer < Material> : register(b0);
-
-	//RootParameter作成。複数設定できるので配列。今回は結果1つだけなので長さの配列
-	D3D12_ROOT_PARAMETER rootParameters[3] = {};
-	rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;//CBVを使う//b0のと一致する
-	rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;//PixelShaderで使う
-	rootParameters[0].Descriptor.ShaderRegister = 0;//レジスタ番号0とバインド//bというのはConstantBufferのこと
-
-	rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;//CBVを使う
-	rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;//VertexShaderで使う
-	rootParameters[1].Descriptor.ShaderRegister = 0;//レジスタ番号を使う
-	//DescriptorTable
-	rootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;//DescriptorTableを使う
-	rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;//PixelShaderで使う
-	rootParameters[2].DescriptorTable.pDescriptorRanges = descriptorRange;//Tableの中身の配列を指定
-	rootParameters[2].DescriptorTable.NumDescriptorRanges = _countof(descriptorRange);//Tableで利用する数
-	descriptionRootSignature.pParameters = rootParameters;//ルートパラメータ配列へのポインタ
-	descriptionRootSignature.NumParameters = _countof(rootParameters);//配列の長さ
-
-	//Samplerの設定
-	D3D12_STATIC_SAMPLER_DESC staticSamplers[1] = {};
-	staticSamplers[0].Filter = D3D12_FILTER_MIN_POINT_MAG_MIP_LINEAR;//パイリニアフィルタ
-	staticSamplers[0].AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;//0-1の範囲外をリピート
-	staticSamplers[0].AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-	staticSamplers[0].AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-	staticSamplers[0].ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
-	staticSamplers[0].MaxLOD = D3D12_FLOAT32_MAX;//ありったけのMipmapを使う
-	staticSamplers[0].ShaderRegister = 0;//レジスタ番号0を使う
-	staticSamplers[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;//PixelShaderで使う
-	descriptionRootSignature.pStaticSamplers = staticSamplers;
-	descriptionRootSignature.NumStaticSamplers = _countof(staticSamplers);
-
-	//
 
 	//WVP用のリソースを作る。Matrix4x4 1つ分のサイズを用意する
 	Microsoft::WRL::ComPtr<ID3D12Resource> wvpResource = dxCommon->CreateBufferResource(sizeof(Matrix4x4));
@@ -512,102 +412,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//単位行列を書き込んでおく
 	*wvpData = MakeIdentity4x4();
 
-	//シリアライズしてバイナリする
-	ID3D10Blob* signatureBlob = nullptr;
-	ID3D10Blob* errorBlob = nullptr;
-	HRESULT hr = D3D12SerializeRootSignature(&descriptionRootSignature,
-		D3D_ROOT_SIGNATURE_VERSION_1, &signatureBlob, &errorBlob);
-		if (FAILED(hr))
-		{
-			Log(reinterpret_cast<char*>(errorBlob->GetBufferPointer()));
-			assert(false);
-		}
-		//バイナリを元に生成
-		ID3D12RootSignature* roolSignatrue = nullptr;
-		hr = dxCommon->device->CreateRootSignature(0,
-			signatureBlob->GetBufferPointer(), signatureBlob->GetBufferSize(),
-			IID_PPV_ARGS(&roolSignatrue));
-		assert(SUCCEEDED(hr));
-
-		//InputLayout
-		D3D12_INPUT_ELEMENT_DESC inputElementDescs[2] = {};
-		inputElementDescs[0].SemanticName = "POSITION";
-		inputElementDescs[0].SemanticIndex = 0;
-		inputElementDescs[0].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-		inputElementDescs[0].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
-		inputElementDescs[1].SemanticName = "TEXCOORD";
-		inputElementDescs[1].SemanticIndex = 0;
-		inputElementDescs[1].Format = DXGI_FORMAT_R32G32_FLOAT;
-		inputElementDescs[1].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
-		D3D12_INPUT_LAYOUT_DESC inputLayoutDesc{};
-		inputLayoutDesc.pInputElementDescs = inputElementDescs;
-		inputLayoutDesc.NumElements = _countof(inputElementDescs);
-
-
-		//BlendStateの設定
-		D3D12_BLEND_DESC blendDesc{};
-		//すべての色要素を書き込む
-		blendDesc.RenderTarget[0].RenderTargetWriteMask =
-			D3D12_COLOR_WRITE_ENABLE_ALL;
-		//RasiterzerStateの設定
-		D3D12_RASTERIZER_DESC rasterizerDesc{};
-		//裏面(時計回り)を表示しない
-		rasterizerDesc.CullMode = D3D12_CULL_MODE_BACK;
-		//三角形の中を塗りつぶす
-		rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
-
-		////Shaderをコンパイルする
-		Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = 
-			dxCommon->CompileShader(L"Resources/shader/Object3D.VS.hlsl",L"vs_6_0");
-		assert(vertexShaderBlob != nullptr);
-		
-		
-		Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = 
-			dxCommon->CompileShader(L"Resources/shader/Object3D.PS.hlsl",
-			L"ps_6_0");
-		assert(pixelShaderBlob != nullptr);
-
-
-
-		D3D12_GRAPHICS_PIPELINE_STATE_DESC graphicsPipelineStateDesc{};
-		graphicsPipelineStateDesc.pRootSignature = roolSignatrue;//RootSignatrue
-
-		graphicsPipelineStateDesc.InputLayout = inputLayoutDesc;//InputLayout
-		graphicsPipelineStateDesc.VS = { vertexShaderBlob->GetBufferPointer(),
-		vertexShaderBlob->GetBufferSize() };
-		graphicsPipelineStateDesc.PS = { pixelShaderBlob->GetBufferPointer(),
-		pixelShaderBlob->GetBufferSize() };//VertexShader
-		graphicsPipelineStateDesc.BlendState = blendDesc;//BlendState
-		graphicsPipelineStateDesc.RasterizerState = rasterizerDesc;//RasterizeerState
-		//書き込むRTVの情報
-		graphicsPipelineStateDesc.NumRenderTargets = 1;
-		graphicsPipelineStateDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
-		//利用するトポロジ(形状)のタイプ。三角形
-		graphicsPipelineStateDesc.PrimitiveTopologyType =
-			D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-		//どのように画面に色を打ち込むかの設定(気にしなくて良い)
-		graphicsPipelineStateDesc.SampleDesc.Count = 1;
-		graphicsPipelineStateDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
-		
-		//DepthStencilStateの設定
-		D3D12_DEPTH_STENCIL_DESC depthStencilDesc{};
-		//Depthの機能を有効化する
-		depthStencilDesc.DepthEnable = true;
-		//書き込むします
-		depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
-		//比較関数はLassEqual。つまり、近ければ描画される
-		depthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
-		
-		//DepthStencilの設定
-		graphicsPipelineStateDesc.DepthStencilState = depthStencilDesc;
-		graphicsPipelineStateDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
-		
-		//実際に生成
-		ID3D12PipelineState* graphicsPipelineState = nullptr;
-		hr = dxCommon->device->CreateGraphicsPipelineState(&graphicsPipelineStateDesc,
-			IID_PPV_ARGS(&graphicsPipelineState));
-		assert(SUCCEEDED(hr));
-		
 		
 		//モデル読み込み
 		ModelData modelData = LoadObjFile("resources", "plane.obj");
@@ -790,43 +594,45 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		//描画前処理
 		dxCommon->PreDraw();
 
+		spriteCommon->CommonDrawSetting();
+
 		dxCommon->CreateView();//Viewportを設定
 		dxCommon->CreateScissor();//Scirssorを設定
 		//RootSignatrueを設定。PSPに設定しているけど別途設定が必要
-		dxCommon->commandList->SetGraphicsRootSignature(roolSignatrue);
-		dxCommon->commandList->SetPipelineState(graphicsPipelineState);//PSOを設定
-		dxCommon->commandList->IASetVertexBuffers(0, 1, &vertexBufferView);//VBVを設定
+		//dxCommon->GetCommandList()->SetGraphicsRootSignature(roolSignatrue);
+		//dxCommon->GetCommandList()->SetPipelineState(graphicsPipelineState);//PSOを設定
+		dxCommon->GetCommandList()->IASetVertexBuffers(0, 1, &vertexBufferView);//VBVを設定
 		//形状を設定。PSOに設定しているものとはまた別。同じものを設定すると考えておけば良い
-		dxCommon->commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		//dxCommon->commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		//マテリアルCBufferの場所を設定
-		dxCommon->commandList->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
-		dxCommon->commandList->SetGraphicsRootConstantBufferView(1, wvpResource->GetGPUVirtualAddress());//これをいれないと描画ができない
-		dxCommon->commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU);
+		dxCommon->GetCommandList()->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
+		dxCommon->GetCommandList()->SetGraphicsRootConstantBufferView(1, wvpResource->GetGPUVirtualAddress());//これをいれないと描画ができない
+		dxCommon->GetCommandList()->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU);
 
 
 		//transform.rotate.y += 0.03f;
 
 
 		//描画!(DrawCall/ドローコール)。3頂点で1つのインタランス。インタランスについては今後
-		dxCommon->commandList->DrawInstanced(UINT(modelData.vertices.size()), 1, 0, 0);
+		dxCommon->GetCommandList()->DrawInstanced(UINT(modelData.vertices.size()), 1, 0, 0);
 
 		//Spriteの描画。変更が必要なものだけ変更する
-		dxCommon->commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSprite);//VBVを設定
-		//TransformationMatrixCBufferの場所を設定
-		dxCommon->commandList->SetGraphicsRootConstantBufferView(1, transformtionMatrixResourceSprite->GetGPUVirtualAddress());
-		//インデックスを指定
-		dxCommon->commandList->IASetIndexBuffer(&indexBufferViewSprite);//IBVを設定
+		//dxCommon->commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSprite);//VBVを設定
+		////TransformationMatrixCBufferの場所を設定
+		//dxCommon->commandList->SetGraphicsRootConstantBufferView(1, transformtionMatrixResourceSprite->GetGPUVirtualAddress());
+		////インデックスを指定
+		//dxCommon->commandList->IASetIndexBuffer(&indexBufferViewSprite);//IBVを設定
 		
 		//実際のcommandListのImGuiの描画コマンドを積む
-		ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), dxCommon->commandList.Get());
+		ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), dxCommon->GetCommandList());
 		
 		//画面に描く処理はすべて終わり、画面に映すので、状態を遷移
 		//今回はRenderTargetからPresentにする
 		//TransitionBarrierを振る
 
 		////コマンドリストの内容を確定させる。すべてのコマンドをつんでからCloseすること
-		hr = dxCommon->commandList->Close();
-		assert(SUCCEEDED(hr));
+		//hr = dxCommon->commandList->Close();
+		//assert(SUCCEEDED(hr));
 		//描画後処理
 		dxCommon->PostDraw();
 
@@ -846,16 +652,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//device->Release();
 	//useAdapter->Release();
 	//dxCommon->dxgiFactory->Release();
-	vertexResource->Release();
-	graphicsPipelineState->Release();
-	signatureBlob->Release();
-	if (errorBlob)
-	{
-		errorBlob->Release();
-	}
-	roolSignatrue->Release();
-	pixelShaderBlob->Release();
-	vertexShaderBlob->Release();
+	//vertexResource->Release();
+	//graphicsPipelineState->Release();
+	//signatureBlob->Release();
+	//if (errorBlob)
+	//{
+	//	errorBlob->Release();
+	//}
+	//roolSignatrue->Release();
+	//pixelShaderBlob->Release();
+	//vertexShaderBlob->Release();
 	/*materialResource->Release();
 	
 	transformtionMatrixResourceSprite->Release();
