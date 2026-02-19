@@ -401,7 +401,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	spriteCommon->Initiailze(dxCommon);
 
 	Sprite* sprite = new Sprite();
-	sprite->Initiailze();
+	sprite->Initiailze(spriteCommon);
 
 	//WVP用のリソースを作る。Matrix4x4 1つ分のサイズを用意する
 	Microsoft::WRL::ComPtr<ID3D12Resource> wvpResource = dxCommon->CreateBufferResource(sizeof(Matrix4x4));
@@ -416,124 +416,83 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		//モデル読み込み
 		ModelData modelData = LoadObjFile("resources", "plane.obj");
 		
-		//マテリアル用のリソースを作る。今回はcolor1つ分のサイズを用意する
-		Microsoft::WRL::ComPtr<ID3D12Resource> materialResource = dxCommon->CreateBufferResource(sizeof(Vector4));
-		//マテリアルにデータを書き込む
-		Vector4* materialData = nullptr;
-		//書き込むためのアドレスを取得
-		materialResource->Map(0, nullptr, reinterpret_cast<void**>(&materialData));
-		//今回は赤を書き込んでみる
-		*materialData = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
-		////Transform変数を作る。
-		Transform cameraTransform{ {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,-5.0f} };
 		
-		
-
-		////Textureを読んで転送する
-		DirectX::ScratchImage mipImages = dxCommon->LoadTexture("resources/uvChecker.png");
-		//DirectX::ScratchImage mipImages = dxCommon->LoadTexture(modelData.material.textrueFilePath);
-		const DirectX::TexMetadata& metadata = mipImages.GetMetadata();
-		Microsoft::WRL::ComPtr<ID3D12Resource> textureResource = dxCommon->CreateTextureResource(metadata);
-		dxCommon->UploadTextureData(textureResource, mipImages);
-		
-		////metaDataを基にSRVの設定
-		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
-		srvDesc.Format = metadata.format;
-		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-		srvDesc.Texture2D.MipLevels = UINT(metadata.mipLevels);
-		
-
-		ID3D12Device* device = dxCommon->GetDrive();
-
-		//SRVを作成するDescriptorHeapの場所を決める
-		D3D12_CPU_DESCRIPTOR_HANDLE textureSrvHandleCPU = dxCommon->srvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
-		D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandleGPU = dxCommon->srvDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
-
-		//先頭はImGuiが使っているのでその次を使う
-		textureSrvHandleCPU.ptr += device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-		textureSrvHandleGPU.ptr += device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
-		//SRVの生成
-		device->CreateShaderResourceView(textureResource.Get(), &srvDesc, textureSrvHandleCPU);
 
 		//DSVHeapの先頭にDSVを作る
 		D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc{};
 		dsvDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;//Format。基本的にはResourceに合わせる
 		dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;//2dTexture
 
-		//Sprite用の頂点リソースを作る
-		Microsoft::WRL::ComPtr<ID3D12Resource>vertexResourceSprite = dxCommon->CreateBufferResource(sizeof(VertexData) * 6);
+		////Sprite用の頂点リソースを作る
+		//Microsoft::WRL::ComPtr<ID3D12Resource>vertexResourceSprite = dxCommon->CreateBufferResource(sizeof(VertexData) * 6);
 
-		//頂点バッファビューを作成する
-		D3D12_VERTEX_BUFFER_VIEW vertexBufferViewSprite{};
-		//リーソスの先頭のアドレスを作成する
-		vertexBufferViewSprite.BufferLocation = vertexResourceSprite->GetGPUVirtualAddress();
-		//使用するリソースのサイズは頂点4つ分のサイズ
-		vertexBufferViewSprite.SizeInBytes = sizeof(VertexData) * 4;
-		//1頂点あたりのサイズ
-		vertexBufferViewSprite.StrideInBytes = sizeof(VertexData);
+		////頂点バッファビューを作成する
+		//D3D12_VERTEX_BUFFER_VIEW vertexBufferViewSprite{};
+		////リーソスの先頭のアドレスを作成する
+		//vertexBufferViewSprite.BufferLocation = vertexResourceSprite->GetGPUVirtualAddress();
+		////使用するリソースのサイズは頂点4つ分のサイズ
+		//vertexBufferViewSprite.SizeInBytes = sizeof(VertexData) * 4;
+		////1頂点あたりのサイズ
+		//vertexBufferViewSprite.StrideInBytes = sizeof(VertexData);
 
-		VertexData* vertexDataSprite = nullptr;
-		vertexResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&vertexDataSprite));
-		//1枚目の三角形
-		vertexDataSprite[0].position = { 0.0f,360.0f,0.0f,1.0f };//左下
-		vertexDataSprite[0].texcoord = { 0.0f,1.0f };
+		//VertexData* vertexDataSprite = nullptr;
+		//vertexResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&vertexDataSprite));
+		////1枚目の三角形
+		//vertexDataSprite[0].position = { 0.0f,360.0f,0.0f,1.0f };//左下
+		//vertexDataSprite[0].texcoord = { 0.0f,1.0f };
 
-		vertexDataSprite[1].position = { 0.0f,0.0f,0.0f,1.0f };//左上
-		vertexDataSprite[1].texcoord = { 0.0f,0.0f };
+		//vertexDataSprite[1].position = { 0.0f,0.0f,0.0f,1.0f };//左上
+		//vertexDataSprite[1].texcoord = { 0.0f,0.0f };
 
-		vertexDataSprite[2].position = { 640.0f,360.0f,0.0f,1.0f };//右下
-		vertexDataSprite[2].texcoord = { 1.0f,1.0f };
+		//vertexDataSprite[2].position = { 640.0f,360.0f,0.0f,1.0f };//右下
+		//vertexDataSprite[2].texcoord = { 1.0f,1.0f };
 
-		vertexDataSprite[3].position = { 640.0f,0.0f,0.0f,1.0f };//右上
-		vertexDataSprite[3].texcoord = { 1.0f,0.0f };
+		//vertexDataSprite[3].position = { 640.0f,0.0f,0.0f,1.0f };//右上
+		//vertexDataSprite[3].texcoord = { 1.0f,0.0f };
 
-		//2枚目の三角形
+		////2枚目の三角形
 
-		vertexDataSprite[4].position = { 640.0f,0.0f,0.0f,1.0f };//右上
-		vertexDataSprite[4].texcoord = { 1.0f,0.0f };
-		vertexDataSprite[5].position = { 640.0f,360.0f,0.0f,1.0f };//右下
-		vertexDataSprite[5].texcoord = { 1.0f,1.0f };
+		//vertexDataSprite[4].position = { 640.0f,0.0f,0.0f,1.0f };//右上
+		//vertexDataSprite[4].texcoord = { 1.0f,0.0f };
+		//vertexDataSprite[5].position = { 640.0f,360.0f,0.0f,1.0f };//右下
+		//vertexDataSprite[5].texcoord = { 1.0f,1.0f };
 
-		//Sprite用のTransformationMatrix用のリソースを作る。Matrix4x4 1つ分のサイズを用意する
-		Microsoft::WRL::ComPtr<ID3D12Resource> transformtionMatrixResourceSprite = dxCommon->CreateBufferResource(sizeof(Matrix4x4));
-		//データを書き込む
-		Matrix4x4* transformationMatrixDataSPrite = nullptr;
-		//書き込むためのアドレスを取得
-		transformtionMatrixResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&transformationMatrixDataSPrite));
-		//単位行列を書き込んでおく
-		*transformationMatrixDataSPrite = MakeIdentity4x4();
+		////Sprite用のTransformationMatrix用のリソースを作る。Matrix4x4 1つ分のサイズを用意する
+		//Microsoft::WRL::ComPtr<ID3D12Resource> transformtionMatrixResourceSprite = dxCommon->CreateBufferResource(sizeof(Matrix4x4));
+		////データを書き込む
+		//Matrix4x4* transformationMatrixDataSPrite = nullptr;
+		////書き込むためのアドレスを取得
+		//transformtionMatrixResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&transformationMatrixDataSPrite));
+		////単位行列を書き込んでおく
+		//*transformationMatrixDataSPrite = MakeIdentity4x4();
 
-		Transform transformSprite({ 1.0f,1.0f,1.0f }, { 0.0f,0.0f,0.0f }, { 0.0f,0.0f,0.0f });
+		//Microsoft::WRL::ComPtr<ID3D12Resource>indexResourceSprice = dxCommon->CreateBufferResource(sizeof(uint32_t) * 6);
+		//D3D12_INDEX_BUFFER_VIEW indexBufferViewSprite{};
+		////リソースの先頭のアドレスから使う
+		//indexBufferViewSprite.BufferLocation = indexResourceSprice->GetGPUVirtualAddress();
+		////使用するリソースのサイズはインデックス6つ分のサイズ
+		//indexBufferViewSprite.SizeInBytes = sizeof(uint32_t) * 6;
+		////インデックスはuint32_tとする
+		//indexBufferViewSprite.Format = DXGI_FORMAT_R32_UINT;
 
-		Microsoft::WRL::ComPtr<ID3D12Resource>indexResourceSprice = dxCommon->CreateBufferResource(sizeof(uint32_t) * 6);
-		D3D12_INDEX_BUFFER_VIEW indexBufferViewSprite{};
-		//リソースの先頭のアドレスから使う
-		indexBufferViewSprite.BufferLocation = indexResourceSprice->GetGPUVirtualAddress();
-		//使用するリソースのサイズはインデックス6つ分のサイズ
-		indexBufferViewSprite.SizeInBytes = sizeof(uint32_t) * 6;
-		//インデックスはuint32_tとする
-		indexBufferViewSprite.Format = DXGI_FORMAT_R32_UINT;
+		////インデックスリソースにデータを書き込む
+		//uint32_t* indexDataSprite = nullptr;
+		//indexResourceSprice->Map(0, nullptr, reinterpret_cast<void**>(&indexDataSprite));
+		//indexDataSprite[0] = 0; indexDataSprite[1] = 1; indexDataSprite[2] = 2;
+		//indexDataSprite[3] = 1; indexDataSprite[4] = 3; indexDataSprite[5] = 2;
 
-		//インデックスリソースにデータを書き込む
-		uint32_t* indexDataSprite = nullptr;
-		indexResourceSprice->Map(0, nullptr, reinterpret_cast<void**>(&indexDataSprite));
-		indexDataSprite[0] = 0; indexDataSprite[1] = 1; indexDataSprite[2] = 2;
-		indexDataSprite[3] = 1; indexDataSprite[4] = 3; indexDataSprite[5] = 2;
-
-		//頂点リソースを作る
-		Microsoft::WRL::ComPtr<ID3D12Resource>vertexResource = dxCommon->CreateBufferResource(sizeof(VertexData) * modelData.vertices.size());
-		//頂点バッファビューを作成する
-		D3D12_VERTEX_BUFFER_VIEW vertexBufferView{};
-		vertexBufferView.BufferLocation = vertexResource->GetGPUVirtualAddress();//リソースの先頭のアドレスから使う
-		vertexBufferView.SizeInBytes = UINT(sizeof(VertexData) * modelData.vertices.size());//使用するリソースのサイズは頂点のサイズ
-		vertexBufferView.StrideInBytes = sizeof(VertexData);//1頂点あたりのサイズ
-		
-		//頂点リソースにデータを書き込む
-		VertexData* vertexData = nullptr;
-		vertexResource->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));//書き込むためのアドレスを取得
-		std::memcpy(vertexData, modelData.vertices.data(), sizeof(VertexData) * modelData.vertices.size());//頂点データをリソースにコピー
+		////頂点リソースを作る
+		//Microsoft::WRL::ComPtr<ID3D12Resource>vertexResource = dxCommon->CreateBufferResource(sizeof(VertexData) * modelData.vertices.size());
+		////頂点バッファビューを作成する
+		//D3D12_VERTEX_BUFFER_VIEW vertexBufferView{};
+		//vertexBufferView.BufferLocation = vertexResource->GetGPUVirtualAddress();//リソースの先頭のアドレスから使う
+		//vertexBufferView.SizeInBytes = UINT(sizeof(VertexData) * modelData.vertices.size());//使用するリソースのサイズは頂点のサイズ
+		//vertexBufferView.StrideInBytes = sizeof(VertexData);//1頂点あたりのサイズ
+		//
+		////頂点リソースにデータを書き込む
+		//VertexData* vertexData = nullptr;
+		//vertexResource->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));//書き込むためのアドレスを取得
+		//std::memcpy(vertexData, modelData.vertices.data(), sizeof(VertexData) * modelData.vertices.size());//頂点データをリソースにコピー
 
 		//ウィンドウのxボタンが押されるまでループ
 	while (true) {
@@ -554,37 +513,32 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		}
 
+		sprite->Update();
+
 		ImGui_ImplDX12_NewFrame();
 		ImGui_ImplWin32_NewFrame();
 		ImGui::NewFrame();
 
 		ImGui::Begin("Sprite");
-		ImGui::ColorEdit4("material", &materialData->x, ImGuiColorEditFlags_AlphaPreview);
-		ImGui::DragFloat2("Sprite transform", &transformSprite.translate.x, 1.0f);
+		//ImGui::ColorEdit4("material", &materialData->x, ImGuiColorEditFlags_AlphaPreview);
+		//ImGui::DragFloat2("Sprite transform", &transformSprite.translate.x, 1.0f);
 		ImGui::End();
 
 		ImGui::Begin("Object");
-		ImGui::ColorEdit4("material", &materialData->x, ImGuiColorEditFlags_AlphaPreview);
-		ImGui::DragFloat("rotate.y", &transform.rotate.y, 0.1f);
+		
+		ImGui::DragFloat3("scale", &transform.scale.x,0.1f);
+		ImGui::DragFloat3("rotate", &transform.rotate.x, 0.1f);
 		ImGui::DragFloat3("transform", &transform.translate.x, 0.1f);
 		//ImGui::DragFloat2("transform", &transformSpri.translate.x, 1.0f);
 		ImGui::End();
 
-		Matrix4x4 worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
-		Matrix4x4 cameraMatrix = MakeAffineMatrix(cameraTransform.scale, cameraTransform.rotate, cameraTransform.translate);
-		Matrix4x4 viewMatrix = Inverse(cameraMatrix);
-		Matrix4x4 projectionMatrix = MakePerspectiveFovMatrix(0.45f, float(WinApp::kClientWidth) / float(WinApp::kClientHeight), 0.1f, 100.0f);
-		Matrix4x4 worldViewProjectionMatrix = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
-		*wvpData = worldViewProjectionMatrix;
+		//Matrix4x4 worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
+		//Matrix4x4 cameraMatrix = MakeAffineMatrix(cameraTransform.scale, cameraTransform.rotate, cameraTransform.translate);
+		//Matrix4x4 viewMatrix = Inverse(cameraMatrix);
+		//Matrix4x4 projectionMatrix = MakePerspectiveFovMatrix(0.45f, float(WinApp::kClientWidth) / float(WinApp::kClientHeight), 0.1f, 100.0f);
+		//Matrix4x4 worldViewProjectionMatrix = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
+		//*wvpData = worldViewProjectionMatrix;
 		
-		//SPrite用のWorldViewProjectionMatrixを作る
-		Matrix4x4 worldMatrixSprite = MakeAffineMatrix(transformSprite.scale, transformSprite.rotate, transformSprite.translate);
-		Matrix4x4 viewMatrixSprite = MakeIdentity4x4();
-		Matrix4x4 projectionMatrixSprite = MakeOrthographicMatrix(0.0f, 0.0f, float(WinApp::kClientWidth), float(WinApp::kClientHeight), 0.0f, 100.0f);
-		Matrix4x4 worldViewProjectionMatrixSprite = Multiply(worldMatrixSprite, Multiply(viewMatrixSprite, projectionMatrixSprite));
-		*transformationMatrixDataSPrite = worldViewProjectionMatrixSprite;
-
-
 		//開発用UIの処理。実際に開発用のUIを出す場合はここをゲーム固有の処理に置き換える
 		//ImGui::ShowDemoWindow();
 
@@ -596,28 +550,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		spriteCommon->CommonDrawSetting();
 
-		dxCommon->CreateView();//Viewportを設定
-		dxCommon->CreateScissor();//Scirssorを設定
+		sprite->Draw();
+
 		//RootSignatrueを設定。PSPに設定しているけど別途設定が必要
 		//dxCommon->GetCommandList()->SetGraphicsRootSignature(roolSignatrue);
 		//dxCommon->GetCommandList()->SetPipelineState(graphicsPipelineState);//PSOを設定
-		dxCommon->GetCommandList()->IASetVertexBuffers(0, 1, &vertexBufferView);//VBVを設定
 		//形状を設定。PSOに設定しているものとはまた別。同じものを設定すると考えておけば良い
 		//dxCommon->commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		//マテリアルCBufferの場所を設定
-		dxCommon->GetCommandList()->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
-		dxCommon->GetCommandList()->SetGraphicsRootConstantBufferView(1, wvpResource->GetGPUVirtualAddress());//これをいれないと描画ができない
-		dxCommon->GetCommandList()->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU);
-
-
 		//transform.rotate.y += 0.03f;
 
 
-		//描画!(DrawCall/ドローコール)。3頂点で1つのインタランス。インタランスについては今後
-		dxCommon->GetCommandList()->DrawInstanced(UINT(modelData.vertices.size()), 1, 0, 0);
-
-		//Spriteの描画。変更が必要なものだけ変更する
-		//dxCommon->commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSprite);//VBVを設定
 		////TransformationMatrixCBufferの場所を設定
 		//dxCommon->commandList->SetGraphicsRootConstantBufferView(1, transformtionMatrixResourceSprite->GetGPUVirtualAddress());
 		////インデックスを指定

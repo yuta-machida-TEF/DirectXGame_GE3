@@ -34,11 +34,14 @@ public:
 	void CreateDepth();//深度バッファの生成
 	void CreateDescriptorHeapRTV();//各種デスクリプタヒープの生成
 	void CreateHeapType();//レンダーターゲットビューの初期化
-	void CreateFence();//深度ステンシルビューの初期化
+	//void CreateDepthStencilView();//深度ステンシルビューの初期化
+	void CreateFence();//フェンス
 	void CreateView();//ビューポート短形の生成
 	void CreateScissor();//シンリング短形の生成
 	void CreateDXC();//DXCコンパイラの生成
 	void CreateImGui();//ImGuiの初期化
+
+	void CreateSRVDescriptorHeap();
 
 	DXGI_SWAP_CHAIN_DESC1 swapChainDesc{};
 
@@ -53,20 +56,24 @@ public:
 	Microsoft::WRL::ComPtr<ID3D12CommandQueue>commandQueue;
 	Microsoft::WRL::ComPtr<ID3D12CommandAllocator>commandAllocator;
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>commandList;
-
+	Microsoft::WRL::ComPtr<ID3D12Resource>depthStencilView;
 	//スワップチェーンの初期化
 	Microsoft::WRL::ComPtr<IDXGISwapChain4> swapChain;
 	//各種デスクリプタヒープの初期化
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>rtvDescriptorHeap;
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>srvDescriptorHeap;
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> dsvDescriptorHeap;
+	
+	ID3D12DescriptorHeap* GetSrvHeap() const {
+		return srvDescriptorHeap.Get();
+	}
+	
 	//DirectX12デバイス
 	Microsoft::WRL::ComPtr<ID3D12Device>device;
 	// SRV用デスクリプタサイズ
 	UINT descriptorSizeSRV = 0;
 	//フェンス値
 	UINT64 fenceVal = 0;
-
-	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> dsvDescriptorHeap;
 
 	D3D12_VIEWPORT viewport_;
 	D3D12_RECT scissorRect_;
@@ -82,6 +89,8 @@ public:
 
 	//スワップチェーンリソース
 	Microsoft::WRL::ComPtr<ID3D12Resource>swapChainResources[2];
+
+	Microsoft::WRL::ComPtr<ID3D12Resource>DepthResource;
 
 	//シェーダーコンパイル
 	Microsoft::WRL::ComPtr<IDxcBlob>CompileShader(const std::wstring& filePath, const wchar_t* profile);
@@ -106,6 +115,14 @@ public:
 	void EnableDebugLayer();
 	void SetupInfoQueue();
 
+	//SRVの指定番号のCPUデスクリプタハンドルを取得する
+	D3D12_CPU_DESCRIPTOR_HANDLE GetSRVCPUDescriptorHandle(uint32_t index);
+
+	//SRVの指定番号のGPUデスクリプタハンドルを取得する
+	D3D12_GPU_DESCRIPTOR_HANDLE GetSRVGPUDescriptorHandle(uint32_t index);
+
+
+
 private:
 
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>
@@ -115,7 +132,6 @@ private:
 	Microsoft::WRL::ComPtr<IDxcUtils> dxcUtils_;
 	Microsoft::WRL::ComPtr<IDxcCompiler3> dxcCompiler_;
 	Microsoft::WRL::ComPtr<IDxcIncludeHandler> includeHandler_;
-
 
 	//ビューポート
 	D3D12_VIEWPORT viewport;

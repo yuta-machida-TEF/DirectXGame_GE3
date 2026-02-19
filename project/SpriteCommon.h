@@ -1,6 +1,8 @@
 #include"engine/base/DiretXCommon.h"
 #pragma once
 
+class DirectXCommon;
+
 //スプライト共通部
 class SpriteCommon
 {
@@ -18,7 +20,7 @@ public:
 private:
 
 	////バイナリを元に生成
-	Microsoft::WRL::ComPtr<ID3D12RootSignature> roolSignatrue = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignatrue = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12PipelineState>graphicsPipelineState = nullptr;
 
 	//ルートシグネチャの作成

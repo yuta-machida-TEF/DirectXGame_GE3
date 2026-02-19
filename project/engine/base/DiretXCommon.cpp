@@ -202,7 +202,7 @@ ID3D12Resource* CreateDepthStencilTextureResource(ID3D12Device* device, int32_t 
 
 void DirectXCommon::CreateDepth()
 {
-	ID3D12Resource* DepthResource = CreateDepthStencilTextureResource(
+	DepthResource = CreateDepthStencilTextureResource(
 		device.Get(), WinApp::kClientWidth, WinApp::kClientHeight);
 	// DSV用のヒープでデイスクリプタの数は１．DSVはShader内で触るものではないので、ShaderVisibleはfalse
 	dsvDescriptorHeap =
@@ -215,7 +215,7 @@ void DirectXCommon::CreateDepth()
 	dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
 	// DSVHeapの先頭にDSVをつくる
 	device->CreateDepthStencilView(
-		DepthResource, &dsvDesc,
+		DepthResource.Get(), &dsvDesc,
 		dsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
 }
 
@@ -227,7 +227,8 @@ void DirectXCommon::CreateDescriptorHeapRTV()
 	rtvDescriptorHeap = CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 2, false);
 	//SRV用のヒープでディスクリプタの数は128。SRVはShader内で触るものではないので、ShaderVisbleはtrue
 	srvDescriptorHeap = CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 128, true);
-
+	//DSV用のヒープでディスクリプタの数は1。DSVはShader内で触るものではないので、ShaderVisbleはfalse
+	dsvDescriptorHeap = CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 1, false);
 
 }
 
@@ -373,7 +374,6 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateBufferResource(size_
 	vertexResourceDesc.SampleDesc.Count = 1;
 	//バッファの場合はこれにする決まり
 	vertexResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-	ID3D12Resource* CreateBufferResource(ID3D12Device * device, size_t sizeInBytes);
 	//実際に頂点リソースを作る
 	ID3D12Resource* vertexResource = nullptr;
 	HRESULT hr = device->CreateCommittedResource(&uploadHeapProperties, D3D12_HEAP_FLAG_NONE,
@@ -453,6 +453,22 @@ DirectX::ScratchImage DirectXCommon::LoadTexture(const std::string& filePath)
 	return mipImages;
 }
 
+void DirectXCommon::CreateSRVDescriptorHeap()
+{
+	D3D12_DESCRIPTOR_HEAP_DESC heapDesc{};
+	heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+	heapDesc.NumDescriptors = 128; // 必要な数
+	heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+	heapDesc.NodeMask = 0;
+
+	HRESULT hr = device->CreateDescriptorHeap(
+		&heapDesc,
+		IID_PPV_ARGS(&srvDescriptorHeap)
+	);
+	assert(SUCCEEDED(hr));
+}
+
+
 void DirectXCommon::EnableDebugLayer() {
 
 #ifdef _DEBUG//DEBUGはCreateWindowの直後
@@ -500,6 +516,25 @@ void DirectXCommon::SetupInfoQueue()
 		infoQueue->Release();
 	}
 #endif // DEBUG
+}
+
+D3D12_CPU_DESCRIPTOR_HANDLE DirectXCommon::GetSRVCPUDescriptorHandle(uint32_t index)
+{
+	return GetCPUDescriptorHandle
+	(
+		srvDescriptorHeap,
+		descriptorSizeSRV,
+		index
+	);
+}
+
+D3D12_GPU_DESCRIPTOR_HANDLE DirectXCommon::GetSRVGPUDescriptorHandle(uint32_t index)
+{
+	return GetGPUDescriptorHandle(
+		srvDescriptorHeap,
+		descriptorSizeSRV,
+		index
+	);
 }
 
 Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> DirectXCommon::CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE heapType, UINT numDescriptors, bool shaderVisible)
@@ -653,7 +688,6 @@ void DirectXCommon::PreDraw()
 	D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle =
 		dsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
 
-	// commandList->OMSetRenderTargets(1, &rtvHandle, false, &dsvHandle);
 	// 画面全体の色をクリア
 	commandList->OMSetRenderTargets(1, &rtvHandle, false, &dsvHandle);
 	float clearColor[] = { 0.1f, 0.25f, 0.5f, 1.0f };

@@ -7,17 +7,25 @@ void SpriteCommon::Initiailze(DirectXCommon* dxCommon)
 
 	//グラフィックスパイプラインの生成
 	CreateGraphicsPipelineState();
-	CreateRootSignature();
 	CommonDrawSetting();
 }
 
 //共通描画設定
 void SpriteCommon::CommonDrawSetting()
 {
-	dxCommon_->GetCommandList()->SetGraphicsRootSignature(roolSignatrue.Get());
+	dxCommon_->GetCommandList()->SetGraphicsRootSignature(rootSignatrue.Get());
 	dxCommon_->GetCommandList()->SetPipelineState(graphicsPipelineState.Get());
-   
 	dxCommon_->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	// ③ SRV用DescriptorHeapをセット（← 超重要）
+	ID3D12DescriptorHeap* descriptorHeaps[] = {
+		dxCommon_->GetSrvHeap()
+	};
+	dxCommon_->commandList->SetDescriptorHeaps(1, descriptorHeaps);
+
+	// ④ プリミティブトポロジをセット
+	dxCommon_->commandList->IASetPrimitiveTopology(
+		D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 }
 
@@ -80,7 +88,7 @@ void SpriteCommon::CreateRootSignature()
 	//バイナリを元に生成
 	hr = dxCommon_->device->CreateRootSignature(0,
 		signatureBlob->GetBufferPointer(), signatureBlob->GetBufferSize(),
-		IID_PPV_ARGS(&roolSignatrue));
+		IID_PPV_ARGS(&rootSignatrue));
 	assert(SUCCEEDED(hr));
 
 }
@@ -92,7 +100,7 @@ void SpriteCommon::CreateGraphicsPipelineState()
 	CreateRootSignature();
 
 	//InputLayout
-	D3D12_INPUT_ELEMENT_DESC inputElementDescs[2] = {};
+	D3D12_INPUT_ELEMENT_DESC inputElementDescs[3] = {};
 	inputElementDescs[0].SemanticName = "POSITION";
 	inputElementDescs[0].SemanticIndex = 0;
 	inputElementDescs[0].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
@@ -101,6 +109,11 @@ void SpriteCommon::CreateGraphicsPipelineState()
 	inputElementDescs[1].SemanticIndex = 0;
 	inputElementDescs[1].Format = DXGI_FORMAT_R32G32_FLOAT;
 	inputElementDescs[1].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
+	inputElementDescs[2].SemanticName = "NORMAL";
+	inputElementDescs[2].SemanticIndex = 0;
+	inputElementDescs[2].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+	inputElementDescs[2].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
+	
 	D3D12_INPUT_LAYOUT_DESC inputLayoutDesc{};
 	inputLayoutDesc.pInputElementDescs = inputElementDescs;
 	inputLayoutDesc.NumElements = _countof(inputElementDescs);
@@ -132,7 +145,7 @@ void SpriteCommon::CreateGraphicsPipelineState()
 
 
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC graphicsPipelineStateDesc{};
-	graphicsPipelineStateDesc.pRootSignature = roolSignatrue.Get();//RootSignatrue
+	graphicsPipelineStateDesc.pRootSignature = rootSignatrue.Get();//RootSignatrue
 
 	graphicsPipelineStateDesc.InputLayout = inputLayoutDesc;//InputLayout
 	graphicsPipelineStateDesc.VS = { vertexShaderBlob->GetBufferPointer(),
@@ -154,7 +167,7 @@ void SpriteCommon::CreateGraphicsPipelineState()
 	//DepthStencilStateの設定
 	D3D12_DEPTH_STENCIL_DESC depthStencilDesc{};
 	//Depthの機能を有効化する
-	depthStencilDesc.DepthEnable = true;
+	depthStencilDesc.DepthEnable = false;
 	//書き込むします
 	depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
 	//比較関数はLassEqual。つまり、近ければ描画される
