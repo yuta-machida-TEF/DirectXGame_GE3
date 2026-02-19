@@ -56,6 +56,8 @@ public:
 		Matrix4x4 uvTransfrom;
 	};
 
+
+
 	// 単位行列
 	Matrix4x4 MakeIdentity4x4() {
 		Matrix4x4 identity;
@@ -263,6 +265,13 @@ public:
 		Matrix4x4 World;
 	};
 
+	//getter
+	const Vector2& GetPostion() const { return postion; }
+	float GetRotation()const { return rotation; }
+	//setter
+	void Setposition(const Vector2& postion) { this->postion = postion; }
+	void SetRotation(float rotation) { this->rotation = rotation; }
+
 	void Initiailze(SpriteCommon* spriteCommon);
 	void Update();
 	void Draw();
@@ -295,6 +304,9 @@ private:
 	D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandleGPU{};
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> textrueFileResource;
+
+	Vector2 postion = { 1.0f,1.0f };
+	float rotation = 0.0f;
 
 	Transform transform
 	{

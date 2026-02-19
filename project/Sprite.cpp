@@ -88,6 +88,11 @@ void Sprite::Initiailze(SpriteCommon* spriteCommon)
 
 void Sprite::Update()
 {
+	transform.translate = { postion.x,postion.y ,0.0f };
+
+	transform.rotate = { 0.0f,0.0f,rotation };
+
+
 	//SPrite用のWorldViewProjectionMatrixを作る
 	Matrix4x4 worldMatrixSprite = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
 	Matrix4x4 viewMatrixSprite = MakeIdentity4x4();

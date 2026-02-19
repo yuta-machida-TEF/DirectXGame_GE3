@@ -514,6 +514,19 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		}
 
 		sprite->Update();
+	
+		//現在の座標を変数で受ける
+		Sprite::Vector2 postion = sprite->GetPostion();
+		//座標を変更する
+		postion.x += 0.8f;
+		postion.y += 0.8f;
+		//変更を反映する
+		sprite->Setposition(postion);
+
+		//角度を変化させるテスト
+		float rotation = sprite->GetRotation();
+		rotation += 0.02f;
+		sprite->SetRotation(rotation);
 
 		ImGui_ImplDX12_NewFrame();
 		ImGui_ImplWin32_NewFrame();
