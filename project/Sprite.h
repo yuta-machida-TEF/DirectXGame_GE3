@@ -268,9 +268,14 @@ public:
 	//getter
 	const Vector2& GetPostion() const { return postion; }
 	float GetRotation()const { return rotation; }
+	const Vector4& GetColor() const { return materialData->color; }
+	const Vector2& GetSize() const { return size; }
+
 	//setter
 	void Setposition(const Vector2& postion) { this->postion = postion; }
 	void SetRotation(float rotation) { this->rotation = rotation; }
+	void SetColor(const Vector4& color) { materialData->color = color; }
+	void SetSize(const Vector2& size) { this->size = size; }
 
 	void Initiailze(SpriteCommon* spriteCommon);
 	void Update();
@@ -307,6 +312,8 @@ private:
 
 	Vector2 postion = { 1.0f,1.0f };
 	float rotation = 0.0f;
+	Vector2 size = { 640.0f,360.0f };
+
 
 	Transform transform
 	{

@@ -403,6 +403,22 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	Sprite* sprite = new Sprite();
 	sprite->Initiailze(spriteCommon);
 
+	std::vector<Sprite*> sprites;
+	for (uint32_t i = 0; i < 5; i++)
+	{
+		Sprite* sprite = new Sprite();
+		sprite->Initiailze(spriteCommon);
+
+		Sprite::Vector2 setPos;
+		setPos.x = 50.0f + i * 250.0f;
+		setPos.y = 50.0f;
+		sprite->Setposition(setPos);
+		sprite->SetSize({ 180.0f,180.0f });
+
+
+		sprites.push_back(sprite);
+	}
+
 	//WVP用のリソースを作る。Matrix4x4 1つ分のサイズを用意する
 	Microsoft::WRL::ComPtr<ID3D12Resource> wvpResource = dxCommon->CreateBufferResource(sizeof(Matrix4x4));
 	//データを書き込む
@@ -412,9 +428,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//単位行列を書き込んでおく
 	*wvpData = MakeIdentity4x4();
 
-		
 		//モデル読み込み
-		ModelData modelData = LoadObjFile("resources", "plane.obj");
+	ModelData modelData = LoadObjFile("resources", "plane.obj");
 		
 		
 
@@ -512,21 +527,38 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		{
 
 		}
-
-		sprite->Update();
 	
-		//現在の座標を変数で受ける
-		Sprite::Vector2 postion = sprite->GetPostion();
-		//座標を変更する
-		postion.x += 0.8f;
-		postion.y += 0.8f;
-		//変更を反映する
-		sprite->Setposition(postion);
+		////現在の座標を変数で受ける
+		//Sprite::Vector2 postion = sprite->GetPostion();
+		////座標を変更する
+		//postion.x += 0.8f;
+		//postion.y += 0.8f;
+		////変更を反映する
+		//sprite->Setposition(postion);
 
-		//角度を変化させるテスト
-		float rotation = sprite->GetRotation();
-		rotation += 0.02f;
-		sprite->SetRotation(rotation);
+		////角度を変化させるテスト
+		//float rotation = sprite->GetRotation();
+		//rotation += 0.02f;
+		//sprite->SetRotation(rotation);
+
+		////色を変化させるテスト
+		//Sprite::Vector4 color = sprite->GetColor();
+		//color.x += 0.04f;
+		//if (color.x > 1.0f)
+		//{
+		//	color.x -= 1.0f;
+		//}
+		//sprite->SetColor(color);
+
+		//Sprite::Vector2 size = sprite->GetSize();
+		//size.x += 1.0f;
+		//size.y += 1.0f;
+		//sprite->SetSize(size);
+
+		for (Sprite* sprite : sprites)
+		{
+			sprite->Update();
+		}
 
 		ImGui_ImplDX12_NewFrame();
 		ImGui_ImplWin32_NewFrame();
@@ -563,7 +595,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		spriteCommon->CommonDrawSetting();
 
-		sprite->Draw();
+		for (Sprite* sprite : sprites)
+		{
+			sprite->Draw();
+		}
 
 		//RootSignatrueを設定。PSPに設定しているけど別途設定が必要
 		//dxCommon->GetCommandList()->SetGraphicsRootSignature(roolSignatrue);
