@@ -24,8 +24,8 @@ void DirectXCommon::Initialize(WinApp* winApp)
 	CreateDrive();
 	CreateCommand();
 	CreateSwapChan();
-	CreateDepth();
 	CreateDescriptorHeapRTV();
+	CreateDepth();
 	CreateHeapType();
 	CreateFence();
 	CreateView();
@@ -222,6 +222,9 @@ void DirectXCommon::CreateDepth()
 //各種デスクリプタヒープの生成
 void DirectXCommon::CreateDescriptorHeapRTV()
 {
+	descriptorSizeSRV =  device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	descriptorSizeRTV =  device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+	descriptorSizeDSV =  device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
 
 	//RTV用のヒープでディスクリプタの数は2。RTVはShader内で触るものではないので、ShaderVisbleはfalse
 	rtvDescriptorHeap = CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 2, false);
@@ -539,23 +542,16 @@ D3D12_GPU_DESCRIPTOR_HANDLE DirectXCommon::GetSRVGPUDescriptorHandle(uint32_t in
 
 Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> DirectXCommon::CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE heapType, UINT numDescriptors, bool shaderVisible)
 {
-	ID3D12DescriptorHeap* CreateDescriptorHeap(
-		ID3D12Device * device, D3D12_DESCRIPTOR_HEAP_TYPE heapType,
-		UINT numDescriptors, bool shaderVisible);
-	{
-		//ディスククリプタヒープの生成
-		ID3D12DescriptorHeap* descriptorHeap = nullptr;
-		D3D12_DESCRIPTOR_HEAP_DESC descriptorHeapDesc{};
-		descriptorHeapDesc.Type = heapType;//レンダーターゲットビュー用
-		descriptorHeapDesc.NumDescriptors = numDescriptors;//ダブルバッファように2つ。多くても構わない
-		descriptorHeapDesc.Flags = shaderVisible ? D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE : D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-		HRESULT hr = device->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(&descriptorHeap));
-		//ディスクリプタヒープが作られなかったので起動できない
-		assert(SUCCEEDED(hr));
-		return descriptorHeap;
-
-	}
-	return Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>();
+	//ディスククリプタヒープの生成
+	ComPtr<ID3D12DescriptorHeap> descriptorHeap = nullptr;
+	D3D12_DESCRIPTOR_HEAP_DESC descriptorHeapDesc{};
+	descriptorHeapDesc.Type = heapType;//レンダーターゲットビュー用
+	descriptorHeapDesc.NumDescriptors = numDescriptors;//ダブルバッファように2つ。多くても構わない
+	descriptorHeapDesc.Flags = shaderVisible ? D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE : D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+	HRESULT hr = device->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(&descriptorHeap));
+	//ディスクリプタヒープが作られなかったので起動できない
+	assert(SUCCEEDED(hr));
+	return descriptorHeap;
 }
 
 void DirectXCommon::InitializeFixFPS()
@@ -568,12 +564,12 @@ void DirectXCommon::UpdateFixFPS()
 {
 	//1/60秒ぴったりの時間
 	const std::chrono::microseconds kMinTime(uint64_t(1000000.0f / 10.0f));
-   //1/60秒よりわずかに短い時間
+	//1/60秒よりわずかに短い時間
 	const std::chrono::microseconds kMinCheckTime(uint64_t(1000000.0f / 15.0f));
 	//現在時間を取得する
 	std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
 	//前回記録からの経過時間を取得する
-	std::chrono::microseconds elaped = 
+	std::chrono::microseconds elaped =
 		std::chrono::duration_cast<std::chrono::microseconds>(now - reference_);
 
 	//1/60秒(よりわずかに短い時間)経っていない場合

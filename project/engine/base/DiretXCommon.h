@@ -72,6 +72,9 @@ public:
 	Microsoft::WRL::ComPtr<ID3D12Device>device;
 	// SRV用デスクリプタサイズ
 	UINT descriptorSizeSRV = 0;
+	UINT descriptorSizeRTV = 0;
+	UINT descriptorSizeDSV = 0;
+
 	//フェンス値
 	UINT64 fenceVal = 0;
 
