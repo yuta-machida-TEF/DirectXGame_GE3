@@ -277,7 +277,7 @@ public:
 	void SetColor(const Vector4& color) { materialData->color = color; }
 	void SetSize(const Vector2& size) { this->size = size; }
 
-	void Initiailze(SpriteCommon* spriteCommon);
+	void Initiailze(SpriteCommon* spriteCommon, std::string textureFilePath);
 	void Update();
 	void Draw();
 
@@ -314,6 +314,8 @@ private:
 	float rotation = 0.0f;
 	Vector2 size = { 640.0f,360.0f };
 
+	//テクスチャ番号
+	uint32_t textureIndex = 0;
 
 	Transform transform
 	{

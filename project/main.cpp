@@ -5,7 +5,7 @@
 #include"engine/base/DiretXCommon.h"
 #include"SpriteCommon.h"
 #include"Sprite.h"
-
+#include"TextureManger.h"
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -400,14 +400,29 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	spriteCommon = new SpriteCommon;
 	spriteCommon->Initiailze(dxCommon);
 
-	Sprite* sprite = new Sprite();
-	sprite->Initiailze(spriteCommon);
+	//Sprite* sprite = new Sprite();
+	//sprite->Initiailze(spriteCommon);
+
+	std::vector<std::string>textureResources = {
+		"resources/uvChecker.png",
+		"resources/monsterball.png"
+	};
+
+	//テクスチャマネージャーの初期化
+	TextureManager::GetInstance()->Initialize(dxCommon);
+
+	for (const std::string& texPath : textureResources)
+	{
+		TextureManager::GetInstance()->LoadTexture(texPath);
+	}
+
 
 	std::vector<Sprite*> sprites;
 	for (uint32_t i = 0; i < 5; i++)
 	{
 		Sprite* sprite = new Sprite();
-		sprite->Initiailze(spriteCommon);
+		std::string& textureFile = textureResources[i % 2];
+		sprite->Initiailze(spriteCommon,textureFile);
 
 		Sprite::Vector2 setPos;
 		setPos.x = 50.0f + i * 250.0f;
@@ -418,6 +433,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		sprites.push_back(sprite);
 	}
+	
 
 	//WVP用のリソースを作る。Matrix4x4 1つ分のサイズを用意する
 	Microsoft::WRL::ComPtr<ID3D12Resource> wvpResource = dxCommon->CreateBufferResource(sizeof(Matrix4x4));
@@ -685,15 +701,25 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//WindowAPIの終了処理
 	winApp->Finalize();
 
+	for (Sprite* sprite : sprites)
+	{
+		delete sprite;
+	}
+	sprites.clear();
+
+	delete spriteCommon;
+
+	//テクスチャマネージャーの終了
+	TextureManager::GetInstance()->Finalize();
+
+	winApp = nullptr;
+
 	//WindowAPI解放
 	delete winApp;
 
-	winApp = nullptr;
 	//DirectXの初期化
 	delete dxCommon;
-
-	delete spriteCommon;
-	delete sprite;
+	
 
 	return 0;
 }

@@ -2,8 +2,9 @@
 #include"SpriteCommon.h"
 #include "engine/base/DiretXCommon.h"
 #include "engine/base/WinApp.h"
+#include"TextureManger.h"
 
-void Sprite::Initiailze(SpriteCommon* spriteCommon)
+void Sprite::Initiailze(SpriteCommon* spriteCommon, std::string textureFilePath)
 {
 	// 引数で受け取ってメンバ変数に記録する
 	this->spriteCommon_ = spriteCommon;
@@ -84,6 +85,10 @@ void Sprite::Initiailze(SpriteCommon* spriteCommon)
 
 	transform = {};
 	transform.scale = { 1.0f,1.0f,1.0f };
+
+	//単位行列を書き込んでおく
+	textureIndex = TextureManager::GetInstance()->GetTextureIndexByFilePath(textureFilePath);
+
 }
 
 void Sprite::Update()
@@ -130,7 +135,7 @@ void Sprite::Draw()
 	//マテリアルCBufferの場所を設定
 	spriteCommon_->GetDxCommon()->GetCommandList()->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());//これをいれないと描画ができない
 	spriteCommon_->GetDxCommon()->GetCommandList()->SetGraphicsRootConstantBufferView(1, transforMationMatrixResource->GetGPUVirtualAddress());
-	spriteCommon_->GetDxCommon()->GetCommandList()->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU);
+	spriteCommon_->GetDxCommon()->GetCommandList()->SetGraphicsRootDescriptorTable(2, TextureManager::GetInstance()->GetSrvHandleGPU(textureIndex));
 	//描画!(DrawCall/ドローコール)。3頂点で1つのインタランス。インタランスについては今後
 	spriteCommon_->GetDxCommon()->GetCommandList()->DrawIndexedInstanced(6, 1, 0, 0, 0);
 
