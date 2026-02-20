@@ -29,7 +29,7 @@ void Sprite::Initiailze(SpriteCommon* spriteCommon, std::string textureFilePath)
 	//書き込むためのアドレスを取得
 	vertexResource->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));
 
-	vertexData[0].position = { 0.0f,360.0f,0.0f,1.0f };
+	vertexData[0].position = { 0.0f,0.0f,1.0f };
 	vertexData[0].texcoord = { 0.0f,1.0f };
 	vertexData[0].normal = { 0.0f,0.0f,-1.0f };
 
@@ -93,27 +93,34 @@ void Sprite::Initiailze(SpriteCommon* spriteCommon, std::string textureFilePath)
 
 void Sprite::Update()
 {
+
 	transform.translate = { postion.x,postion.y ,0.0f };
 
 	transform.rotate = { 0.0f,0.0f,rotation };
  
 	transform.scale = { size.x,size.y,1.0f };
 
+	float left = 0.0f - anchorPoint.x;
+	float right = 1.0f - anchorPoint.x;
+	float top = 0.0f - anchorPoint.y;
+	float bottom = 1.0f - anchorPoint.y;
+
+
 	//頂点リソースにデータを書き込む
 	//左下
-	vertexData[0].position = { 0.0f,1.0f,0.0f,1.0f };
+	vertexData[0].position = { left,bottom,0.0f,1.0f };
 	vertexData[0].texcoord = { 0.0f,1.0f };
 	vertexData[0].normal = { 0.0f,0.0f,-1.0f };
 	//左上
-	vertexData[1].position = { 0.0f,0.0f,0.0f,1.0f };
+	vertexData[1].position = { left,top,0.0f,1.0f };
 	vertexData[1].texcoord = { 0.0f,0.0f };
 	vertexData[1].normal = { 0.0f,0.0f,-1.0f };
 	//右下
-	vertexData[2].position = { 1.0f,1.0f,0.0f,1.0f };
+	vertexData[2].position = { right,bottom,0.0f,1.0f };
 	vertexData[2].texcoord = { 1.0f,1.0f };
 	vertexData[2].normal = { 0.0f,0.0f,-1.0f };
 	//右下
-	vertexData[3].position = { 1.0f,0.0f,0.0f,1.0f };
+	vertexData[3].position = { right,top,0.0f,1.0f };
 	vertexData[3].texcoord = { 1.0f,0.0f };
 	vertexData[3].normal = { 0.0f,0.0f,-1.0f };
 

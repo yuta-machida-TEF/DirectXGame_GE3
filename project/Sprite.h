@@ -270,12 +270,17 @@ public:
 	float GetRotation()const { return rotation; }
 	const Vector4& GetColor() const { return materialData->color; }
 	const Vector2& GetSize() const { return size; }
+	const Vector2& GetAnchorPoint() const { return anchorPoint; }
+
 
 	//setter
 	void Setposition(const Vector2& postion) { this->postion = postion; }
 	void SetRotation(float rotation) { this->rotation = rotation; }
 	void SetColor(const Vector4& color) { materialData->color = color; }
 	void SetSize(const Vector2& size) { this->size = size; }
+	void SetAnchorPoint(const Vector2& anchoPoint) { this->anchorPoint; }
+
+
 
 	void Initiailze(SpriteCommon* spriteCommon, std::string textureFilePath);
 	void Update();
@@ -316,6 +321,9 @@ private:
 
 	//テクスチャ番号
 	uint32_t textureIndex = 0;
+
+	Vector2 anchorPoint = { 0.0f,0.0f };
+
 
 	Transform transform
 	{

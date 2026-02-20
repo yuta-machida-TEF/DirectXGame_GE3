@@ -400,8 +400,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	spriteCommon = new SpriteCommon;
 	spriteCommon->Initiailze(dxCommon);
 
-	//Sprite* sprite = new Sprite();
-	//sprite->Initiailze(spriteCommon);
+	Sprite* sprite = new Sprite();
+	//sprite->Initiailze(spriteCommon,t);
 
 	std::vector<std::string>textureResources = {
 		"resources/uvChecker.png",
@@ -553,10 +553,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		//sprite->Setposition(postion);
 
 		////角度を変化させるテスト
-		//float rotation = sprite->GetRotation();
-		//rotation += 0.02f;
-		//sprite->SetRotation(rotation);
-
+		for (Sprite* sprite : sprites)
+		{
+			float rotation = sprite->GetRotation();
+			rotation += 0.02f;
+			sprite->SetRotation(rotation);
+		}
+	
 		////色を変化させるテスト
 		//Sprite::Vector4 color = sprite->GetColor();
 		//color.x += 0.04f;
