@@ -265,13 +265,18 @@ public:
 		Matrix4x4 World;
 	};
 
+
+
 	//getter
 	const Vector2& GetPostion() const { return postion; }
 	float GetRotation()const { return rotation; }
 	const Vector4& GetColor() const { return materialData->color; }
 	const Vector2& GetSize() const { return size; }
 	const Vector2& GetAnchorPoint() const { return anchorPoint; }
-
+	const bool IsFlipsX() const { return isFilpX_; }
+	const bool IsFlipsY() const { return isFlipY_; }
+	const Vector2& GetTextureLeftTop() const { return textureLeftTop; }
+	const Vector2& GetTextureSize() const { return textureSize; }
 
 	//setter
 	void Setposition(const Vector2& postion) { this->postion = postion; }
@@ -279,7 +284,10 @@ public:
 	void SetColor(const Vector4& color) { materialData->color = color; }
 	void SetSize(const Vector2& size) { this->size = size; }
 	void SetAnchorPoint(const Vector2& anchoPoint) { this->anchorPoint; }
-
+	void SetFilpsX(bool isFilpsX) { this->isFilpX_ = isFilpsX; }
+	void SetFilpsY(bool isFilpsY) { this->isFlipY_ = isFilpsY; }
+	void SetTextureLeftTop(const Vector2& textureLeftTop) { this->textureLeftTop = textureLeftTop; }
+	void SetTextureSize(const Vector2& textureSize) { this->textureSize; }
 
 
 	void Initiailze(SpriteCommon* spriteCommon, std::string textureFilePath);
@@ -322,8 +330,20 @@ private:
 	//テクスチャ番号
 	uint32_t textureIndex = 0;
 
-	Vector2 anchorPoint = { 0.0f,0.0f };
+	Vector2 anchorPoint = { 0.3f,0.3f };
 
+	//左右フリップ
+	bool isFilpX_ = false;
+	//上下フリップ
+	bool isFlipY_ = false;
+
+	//テクスチャ左上座標
+	Vector2 textureLeftTop = { 0.0f,0.0f };
+	//テクスチャ切り出しサイズ
+	Vector2 textureSize = { 100.0f,100.0f };
+
+	//テクスチャサイズをイメージに合わせる
+	void AdjustTextureSize();
 
 	Transform transform
 	{
