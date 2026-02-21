@@ -330,7 +330,7 @@ private:
 	//テクスチャ番号
 	uint32_t textureIndex = 0;
 
-	Vector2 anchorPoint = { 0.3f,0.3f };
+	Vector2 anchorPoint = { 0.5f,0.5f };
 
 	//左右フリップ
 	bool isFilpX_ = false;
