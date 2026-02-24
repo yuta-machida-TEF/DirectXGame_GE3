@@ -62,15 +62,15 @@ void Sprite::Initiailze(SpriteCommon* spriteCommon, std::string textureFilePath)
 	//書き込むためのアドレスを取得
 	materialResource->Map(0, nullptr, reinterpret_cast<void**>(&materialData));
 	//今回は白を書き込んでみる
-	materialData->color = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
+	materialData->color = MyMath::Vector4(1.0f, 1.0f, 1.0f, 1.0f);
 
 	//Sparite用のTransformationMatrix用のリソースを作る。Matrix4x4 １つ分のサイズを用意する
 	transforMationMatrixResource = spriteCommon_->GetDxCommon()->CreateBufferResource(sizeof(TransformationMatrix));
 	//書き込むためのアドレスを取得
 	transforMationMatrixResource->Map(0, nullptr, reinterpret_cast<void**>(&transformationMatrixData));
 	//単位行列を書きこんでおく
-	transformationMatrixData->WVP = MakeIdentity4x4();
-	transformationMatrixData->World = MakeIdentity4x4();
+	transformationMatrixData->WVP = MyMath::MakeIdentity4x4();
+	transformationMatrixData->World = MyMath::MakeIdentity4x4();
 
 	//Textueを読んで転送する
 	DirectX::ScratchImage mipImages = spriteCommon_->GetDxCommon()->LoadTexture("resources/uvChecker.png");
@@ -148,9 +148,9 @@ void Sprite::Update()
 
 
 	//SPrite用のWorldViewProjectionMatrixを作る
-	Matrix4x4 worldMatrixSprite = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
-	Matrix4x4 viewMatrixSprite = MakeIdentity4x4();
-	Matrix4x4 projectionMatrixSprite = MakeOrthographicMatrix(0.0f, 0.0f, float(WinApp::kClientWidth), float(WinApp::kClientHeight), 0.0f, 100.0f);
+	MyMath::Matrix4x4 worldMatrixSprite = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
+	MyMath::Matrix4x4 viewMatrixSprite = MyMath::MakeIdentity4x4();
+	MyMath::Matrix4x4 projectionMatrixSprite = MyMath::MakeOrthographicMatrix(0.0f, 0.0f, float(WinApp::kClientWidth), float(WinApp::kClientHeight), 0.0f, 100.0f);
 	transformationMatrixData->WVP = Multiply(worldMatrixSprite, Multiply(viewMatrixSprite, projectionMatrixSprite));
 	transformationMatrixData->World = worldMatrixSprite;
 }

@@ -1,6 +1,6 @@
-#include"engine/base/DiretXCommon.h"
 #pragma once
 
+#include"engine/base/DiretXCommon.h"
 class DirectXCommon;
 
 //スプライト共通部
